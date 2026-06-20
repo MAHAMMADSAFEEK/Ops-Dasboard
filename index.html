@@ -179,6 +179,18 @@ tr:hover td{background:var(--surface2);}
 .pov-ms-opt mark{background:rgba(79,142,247,0.3);color:var(--accent);border-radius:2px;}
 .pov-ms-empty{padding:12px;text-align:center;color:var(--muted);font-size:12px;}
 
+/* ── Hierarchy Report ── */
+.hrc-table{border-collapse:separate;border-spacing:0;font-size:12px;width:100%;min-width:max-content;}
+.hrc-table th{position:sticky;top:0;z-index:5;background:var(--surface2);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.hrc-table td{padding:7px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.hrc-table tr:hover td{background:rgba(255,255,255,0.02);}
+.hrc-row-0{background:rgba(79,142,247,0.04);}
+.hrc-row-1{background:rgba(155,109,255,0.04);}
+.hrc-row-2{background:rgba(245,166,35,0.04);}
+.hrc-row-3{background:transparent;}
+.hrc-tg{background:var(--surface);border:1px solid var(--border2);border-radius:4px;cursor:pointer;width:20px;height:20px;line-height:1;font-size:13px;padding:0;margin-right:8px;vertical-align:middle;display:inline-flex;align-items:center;justify-content:center;}
+.hrc-tg:hover{background:var(--surface2);}
+
 </style>
 </head>
 <body>
@@ -207,6 +219,7 @@ tr:hover td{background:var(--surface2);}
   <div class="tabs">
     <button class="tab active" onclick="switchTab('pov',this)"><i class="ti ti-layout-dashboard"></i> Project Overview</button>
     <button class="tab" onclick="switchTab('rpt',this)"><i class="ti ti-chart-pie"></i> Reports</button>
+    <button class="tab" onclick="switchTab('hrc',this)"><i class="ti ti-binary-tree"></i> Hierarchy Report</button>
     <button class="tab" onclick="switchTab('pmr',this)"><i class="ti ti-calendar-month"></i> Project wise Monthly report</button>
     <button class="tab" onclick="switchTab('pemr',this)"><i class="ti ti-user-check"></i> PE Monthly Report</button>
     <button class="tab" onclick="switchTab('vmr',this)"><i class="ti ti-building-store"></i> Vendor Monthly Report</button>
@@ -294,6 +307,38 @@ tr:hover td{background:var(--surface2);}
       <div class="card">
         <div class="card-title"><i class="ti ti-table"></i> <span id="rpt-table-title">City-wise Report</span> <span style="font-size:11px;color:var(--muted);font-weight:400;">· click a row to filter</span></div>
         <div class="table-wrap"><table><thead id="rpt-head"></thead><tbody id="rpt-body"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIERARCHY REPORT TAB -->
+  <div id="tab-hrc" class="tab-content">
+    <div class="pe-filter-bar">
+      <div class="pe-filter-group"><label>Month</label><select id="hrc-f-month" onchange="buildHRC()"></select></div>
+      <div class="pe-filter-group"><label>Week</label>
+        <select id="hrc-f-week" onchange="buildHRC()">
+          <option value="">All Weeks</option>
+          <option value="1">Week 1 (1–7)</option>
+          <option value="2">Week 2 (8–14)</option>
+          <option value="3">Week 3 (15–21)</option>
+          <option value="4">Week 4 (22–28)</option>
+          <option value="5">Week 5 (29–end)</option>
+        </select>
+      </div>
+      <div class="pe-fdivider"></div>
+      <div class="pe-filter-actions">
+        <span class="spacer"></span>
+        <div style="display:flex;gap:8px;">
+          <button class="pe-clr-btn" onclick="expandAllHRC()"><i class="ti ti-square-plus" style="font-size:12px;"></i> Expand all</button>
+          <button class="pe-clr-btn" onclick="collapseAllHRC()"><i class="ti ti-square-minus" style="font-size:12px;"></i> Collapse all</button>
+          <button class="pe-clr-btn" onclick="clearHRCFilters()"><i class="ti ti-x" style="font-size:12px;"></i> Clear</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:16px 24px 24px;">
+      <div class="section-title">Hierarchy Report <span style="text-transform:none;font-weight:400;color:var(--muted);font-size:12px;margin-left:6px;">Cluster Head → City Manager → PE → Project · click + to expand</span></div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="table-wrap" style="max-height:78vh;overflow:auto;"><table class="hrc-table"><thead id="hrc-head"></thead><tbody id="hrc-body"></tbody></table></div>
       </div>
     </div>
   </div>
@@ -606,6 +651,7 @@ async function loadAll(){
     populatePMRFilters();
     populatePEMRFilters();
     populateVMRFilters();
+    populateHRCFilters();
     buildAll();
     document.getElementById('main').style.display='block';
     document.getElementById('status-badge').innerHTML='<i class="ti ti-circle-check" style="font-size:10px"></i> Live';
@@ -618,7 +664,7 @@ async function loadAll(){
   }finally{document.getElementById('overlay').classList.add('hidden');document.querySelector('.btn-refresh').classList.remove('spinning');}
 }
 
-function buildAll(){buildPOV();buildRPT();buildPMR();buildPEMR();buildVMR();}
+function buildAll(){buildPOV();buildRPT();buildPMR();buildPEMR();buildVMR();buildHRC();}
 
 // ── PE ────────────────────────────────────────────────────────
 function populatePEFilters(){
@@ -3159,6 +3205,163 @@ function vmrShowDatePivot(dk){
     ${table}
   </div>`;
   ov.style.display='flex';
+}
+
+// ── HIERARCHY REPORT ──────────────────────────────────────────
+let _hrcExpanded=new Set();
+function toggleHRC(key){if(_hrcExpanded.has(key))_hrcExpanded.delete(key);else _hrcExpanded.add(key);buildHRC();}
+function collapseAllHRC(){_hrcExpanded.clear();buildHRC();}
+function expandAllHRC(){
+  // Expand every cluster and city-manager (PEs typically have many projects, so leave PE collapsed unless user clicks)
+  D.lead.r.forEach(x=>{
+    const pid=lv(x,LEAD_COL.PID);if(!pid)return;
+    const cluster=lv(x,LEAD_COL.CLUSTER)||'(No Cluster)';
+    const cm=lv(x,LEAD_COL.CITYMGR)||'(No City Mgr)';
+    _hrcExpanded.add('c:'+cluster);
+    _hrcExpanded.add('c:'+cluster+'|'+cm);
+  });
+  buildHRC();
+}
+function populateHRCFilters(){
+  const months={};
+  D.att.r.forEach(x=>{const d=parseDate(v(x,ATT_COL.DATE));if(d){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');months[k]=d;}});
+  const msel=document.getElementById('hrc-f-month');
+  if(msel){
+    const cur=msel.value;
+    msel.innerHTML='<option value="">All time</option>';
+    const keys=Object.keys(months).sort().reverse();
+    keys.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=months[k].toLocaleDateString('en-IN',{month:'long',year:'numeric'});msel.appendChild(o);});
+    if(cur)msel.value=cur; else if(keys.length)msel.value=keys[0];
+  }
+}
+function clearHRCFilters(){
+  const m=document.getElementById('hrc-f-month');if(m&&m.options.length)m.selectedIndex=Math.min(1,m.options.length-1);
+  const w=document.getElementById('hrc-f-week');if(w)w.value='';
+  _hrcExpanded.clear();
+  buildHRC();
+}
+
+function buildHRC(){
+  const monthVal=(document.getElementById('hrc-f-month')||{}).value||'';
+  const weekVal=(document.getElementById('hrc-f-week')||{}).value||'';
+  const head=document.getElementById('hrc-head'),body=document.getElementById('hrc-body');
+  if(!head||!body)return;
+
+  // Time bounds (optional)
+  let yy=null,mm=null,dayStart=null,dayEnd=null;
+  if(monthVal){
+    [yy,mm]=monthVal.split('-').map(Number);
+    const daysInMonth=new Date(yy,mm,0).getDate();
+    dayStart=1;dayEnd=daysInMonth;
+    if(weekVal){const w=Number(weekVal);dayStart=(w-1)*7+1;dayEnd=Math.min(w*7,daysInMonth);}
+  }
+
+  // Per-project attendance stats in window
+  const projAtt={}; // pid -> {onsite, without, noact, hasAny}
+  D.att.r.forEach(x=>{
+    const pid=v(x,ATT_COL.PID),d=parseDate(v(x,ATT_COL.DATE));
+    if(!pid||!d)return;
+    if(yy!==null){
+      if(d.getFullYear()!==yy||d.getMonth()!==mm-1)return;
+      const dd=d.getDate();if(dd<dayStart||dd>dayEnd)return;
+    }
+    if(!projAtt[pid])projAtt[pid]={onsite:0,without:0,noact:0,hasAny:false};
+    projAtt[pid].hasAny=true;
+    const st=v(x,ATT_COL.M).toLowerCase();
+    if(st==='onsite visit')projAtt[pid].onsite++;
+    else if(st==='without visit update')projAtt[pid].without++;
+    else if(st==='no activity')projAtt[pid].noact++;
+  });
+
+  // Hierarchy: cluster → cm → pe → projects[]
+  const tree={};
+  D.lead.r.forEach(x=>{
+    const pid=lv(x,LEAD_COL.PID);if(!pid)return;
+    const cluster=lv(x,LEAD_COL.CLUSTER)||'(No Cluster Head)';
+    const cm=lv(x,LEAD_COL.CITYMGR)||'(No City Manager)';
+    const pe=lv(x,LEAD_COL.PE)||'(PE Not Assigned)';
+    const pname=lv(x,LEAD_COL.PNAME)||pid;
+    const city=lv(x,LEAD_COL.CITY)||'—';
+    if(!tree[cluster])tree[cluster]={};
+    if(!tree[cluster][cm])tree[cluster][cm]={};
+    if(!tree[cluster][cm][pe])tree[cluster][cm][pe]={};
+    tree[cluster][cm][pe][pid]={pname,city};
+  });
+
+  // Counters
+  const projC=pid=>{const a=projAtt[pid]||{onsite:0,without:0,noact:0,hasAny:false};return {projects:1,updated:a.hasAny?1:0,pending:a.hasAny?0:1,onsite:a.onsite,without:a.without,noact:a.noact};};
+  const sumC=(a,b)=>({projects:a.projects+b.projects,updated:a.updated+b.updated,pending:a.pending+b.pending,onsite:a.onsite+b.onsite,without:a.without+b.without,noact:a.noact+b.noact});
+  const zeroC={projects:0,updated:0,pending:0,onsite:0,without:0,noact:0};
+
+  // Render rows respecting expansion state
+  const rows=[];
+  Object.keys(tree).sort().forEach(cluster=>{
+    const cKey='c:'+cluster;
+    const cmsObj=tree[cluster];
+    let cCounts={...zeroC};
+    const cmKeys=Object.keys(cmsObj).sort();
+    cmKeys.forEach(cm=>{Object.keys(cmsObj[cm]).forEach(pe=>{Object.keys(cmsObj[cm][pe]).forEach(pid=>{cCounts=sumC(cCounts,projC(pid));});});});
+    const cExpanded=_hrcExpanded.has(cKey);
+    rows.push({level:0,key:cKey,label:cluster,counts:cCounts,expandable:cmKeys.length>0,expanded:cExpanded});
+    if(!cExpanded)return;
+    cmKeys.forEach(cm=>{
+      const cmKey=cKey+'|'+cm;
+      const pesObj=cmsObj[cm];
+      const peKeys=Object.keys(pesObj).sort();
+      let cmCounts={...zeroC};
+      peKeys.forEach(pe=>{Object.keys(pesObj[pe]).forEach(pid=>{cmCounts=sumC(cmCounts,projC(pid));});});
+      const cmExpanded=_hrcExpanded.has(cmKey);
+      rows.push({level:1,key:cmKey,label:cm,counts:cmCounts,expandable:peKeys.length>0,expanded:cmExpanded});
+      if(!cmExpanded)return;
+      peKeys.forEach(pe=>{
+        const peKey=cmKey+'|'+pe;
+        const pidsObj=pesObj[pe];
+        const pidKeys=Object.keys(pidsObj);
+        let peCounts={...zeroC};
+        pidKeys.forEach(pid=>{peCounts=sumC(peCounts,projC(pid));});
+        const peExpanded=_hrcExpanded.has(peKey);
+        rows.push({level:2,key:peKey,label:pe,counts:peCounts,expandable:pidKeys.length>0,expanded:peExpanded});
+        if(!peExpanded)return;
+        pidKeys.sort((a,b)=>(pidsObj[a].pname||a).localeCompare(pidsObj[b].pname||b)).forEach(pid=>{
+          rows.push({level:3,key:peKey+'|'+pid,label:pidsObj[pid].pname,sublabel:pid+' · '+pidsObj[pid].city,counts:projC(pid),expandable:false,pid});
+        });
+      });
+    });
+  });
+
+  head.innerHTML=`<tr><th style="width:34px;text-align:center;">#</th><th>Cluster Head / City Manager / PE / Project</th><th style="text-align:right;">Projects</th><th style="text-align:right;">Updated</th><th style="text-align:right;">Pending</th><th style="text-align:right;">Onsite Visit</th><th style="text-align:right;">Without Visit</th><th style="text-align:right;">No Activity</th></tr>`;
+
+  if(!rows.length){body.innerHTML='<tr><td colspan="8" class="empty">No data</td></tr>';return;}
+
+  const levelIcons=['ti-users-group','ti-user-cog','ti-user','ti-building-skyscraper'];
+  const levelColors=['#4f8ef7','#9b6dff','#f5a623','#34c98a'];
+
+  let clusterIdx=0;
+  body.innerHTML=rows.map(r=>{
+    const indent=r.level*24;
+    const lvlIcon=levelIcons[r.level];
+    const lvlColor=levelColors[r.level];
+    const fontWeight=r.level===3?500:600;
+    const toggle=r.expandable
+      ? `<button class="hrc-tg" onclick="toggleHRC('${r.key.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" style="color:${lvlColor};">${r.expanded?'−':'+'}</button>`
+      : `<span style="display:inline-block;width:28px;"></span>`;
+    if(r.level===0)clusterIdx++;
+    const numberCell=r.level===0?`<td style="color:var(--muted);text-align:center;font-weight:500;">${clusterIdx}</td>`:`<td></td>`;
+    const labelNode=r.level===3
+      ? `<span style="font-weight:${fontWeight};">${pemrEsc(r.label)}</span>${r.sublabel?`<div style="font-size:10px;color:var(--muted);margin-left:0;margin-top:2px;">${pemrEsc(r.sublabel)}</div>`:''}`
+      : `<span style="font-weight:${fontWeight};">${pemrEsc(r.label)}</span>`;
+    const projCount=r.counts.projects;
+    return `<tr class="hrc-row-${r.level}">
+      ${numberCell}
+      <td style="padding-left:${12+indent}px;"><span style="display:inline-flex;align-items:center;gap:6px;">${toggle}<i class="ti ${lvlIcon}" style="color:${lvlColor};font-size:14px;"></i>${labelNode}</span></td>
+      <td style="text-align:right;font-weight:${fontWeight};color:${lvlColor};">${projCount}</td>
+      <td style="text-align:right;color:${r.counts.updated?'#34c98a':'var(--muted)'};font-weight:500;">${r.counts.updated||'—'}</td>
+      <td style="text-align:right;color:${r.counts.pending?'#e74c3c':'var(--muted)'};font-weight:500;">${r.counts.pending||'—'}</td>
+      <td style="text-align:right;color:${r.counts.onsite?'#34c98a':'var(--muted)'};">${r.counts.onsite||'—'}</td>
+      <td style="text-align:right;color:${r.counts.without?'#3bc0d8':'var(--muted)'};">${r.counts.without||'—'}</td>
+      <td style="text-align:right;color:${r.counts.noact?'#f5a623':'var(--muted)'};">${r.counts.noact||'—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 loadAll();
