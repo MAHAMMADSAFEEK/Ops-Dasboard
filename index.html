@@ -1289,10 +1289,12 @@ function renderProjectSummary(projId,projName){
   const projStartDate=allProjDates.length?new Date(Math.min(...allProjDates)):null;
   const projEndDate=allProjDates.length?new Date(Math.max(...allProjDates)):null;
   const today=new Date(); today.setHours(0,0,0,0);
-  const projTAT=projStartDate?Math.ceil((today-projStartDate)/(1000*60*60*24))+1:null;
-  const weightedPct=Math.round(completedPctSum);
+const projTAT=projStartDate?Math.ceil((today-projStartDate)/(1000*60*60*24))+1:null;
+  let completedPctSum=0;
+  rows.forEach(r=>{
+    if(r.status==='done') completedPctSum+=(r.expectedPct||0);
   });
-  const weightedPct=totalWeight>0?Math.round(weightedCompleted/totalWeight*100):0;
+  const weightedPct=Math.round(completedPctSum);
   const total_=workplanItems.length;
   const completedPct=total_?Math.round(completedCount/total_*100):0;
   const wipPct=total_?Math.round(wipCount/total_*100):0;
