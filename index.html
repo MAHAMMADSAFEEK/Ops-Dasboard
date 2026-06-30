@@ -1290,12 +1290,11 @@ function renderProjectSummary(projId,projName){
   const projEndDate=allProjDates.length?new Date(Math.max(...allProjDates)):null;
   const today=new Date(); today.setHours(0,0,0,0);
   const projTAT=projStartDate?Math.ceil((today-projStartDate)/(1000*60*60*24))+1:null;
-  let weightedCompleted=0,totalWeight=0;
+let completedPctSum=0;
   rows.forEach(r=>{
-    const w=r.expectedPct||0;
-    totalWeight+=w;
-    if(r.status==='done') weightedCompleted+=w;
-    else if(r.status==='wip') weightedCompleted+=w*(r.pct/100);
+    if(r.status==='done') completedPctSum+=(r.expectedPct||0);
+  });
+  const weightedPct=Math.round(completedPctSum);
   });
   const weightedPct=totalWeight>0?Math.round(weightedCompleted/totalWeight*100):0;
   const total_=workplanItems.length;
@@ -1638,20 +1637,19 @@ function computeProjectMetrics(projId){
   const wr=D.workplan.r;
   const tmpl=wr.filter(x=>(x[0]||'').trim()).map(x=>({plan:(x[0]||'').trim(),expectedPct:parseFloat((x[1]||'').trim())||0}));
   const norm=s=>s.trim().toLowerCase().replace(/[^a-z0-9]/g,'');
-  let weightedCompleted=0,totalWeight=0;
+let completedPctSum=0;
   tmpl.forEach(({plan,expectedPct})=>{
     const pn=norm(plan);
     const matched=dprRows.filter(x=>{const dp=norm(v(x,D_PLAN));return dp===pn||dp.includes(pn)||pn.includes(dp);});
-    totalWeight+=expectedPct;
     if(!matched.length)return;
     const sorted=[...matched].sort((a,b)=>{const da=parseDate(v(a,D_TS)),db=parseDate(v(b,D_TS));if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;});
     const latest=sorted[sorted.length-1];
     const latestPct=parseFloat(v(latest,D_PCT))||0;
     const latestTask=v(latest,D_TASK).toLowerCase();
-    if(latestTask.includes('complet')||latestPct>=100)weightedCompleted+=expectedPct;
-    else weightedCompleted+=expectedPct*(latestPct/100);
+    const isDone=latestTask.includes('complet')||latestPct>=100;
+    if(isDone)completedPctSum+=(expectedPct||0);
   });
-  const weightedPct=totalWeight>0?Math.round(weightedCompleted/totalWeight*100):0;
+  const weightedPct=Math.round(completedPctSum);
   let status;
   if(!dprRows.length)status='pending';
   else if(weightedPct>=100)status='done';
