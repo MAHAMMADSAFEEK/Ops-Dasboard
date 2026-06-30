@@ -1289,10 +1289,10 @@ function renderProjectSummary(projId,projName){
   const projStartDate=allProjDates.length?new Date(Math.min(...allProjDates)):null;
   const projEndDate=allProjDates.length?new Date(Math.max(...allProjDates)):null;
   const today=new Date(); today.setHours(0,0,0,0);
-const projTAT=projStartDate?Math.ceil((today-projStartDate)/(1000*60*60*24))+1:null;
-  let completedPctSum=0;
+  const projTAT=projStartDate?Math.ceil((today-projStartDate)/(1000*60*60*24))+1:null;
+let completedPctSum=0;
   rows.forEach(r=>{
-    if(r.status==='done') completedPctSum+=(r.expectedPct||0);
+    if(r.status==='done') completedPctSum+=(r.expectedPct||0);   // only COMPLETED tasks count; sum their Workplan %
   });
   const weightedPct=Math.round(completedPctSum);
   const total_=workplanItems.length;
@@ -1645,9 +1645,9 @@ let completedPctSum=0;
     const latestPct=parseFloat(v(latest,D_PCT))||0;
     const latestTask=v(latest,D_TASK).toLowerCase();
     const isDone=latestTask.includes('complet')||latestPct>=100;
-    if(isDone)completedPctSum+=(expectedPct||0);
+    if(isDone)completedPctSum+=(expectedPct||0);   // sum Workplan % only for COMPLETED tasks
   });
-  const weightedPct=Math.round(completedPctSum);
+  const weightedPct=Math.round(completedPctSum); 
   let status;
   if(!dprRows.length)status='pending';
   else if(weightedPct>=100)status='done';
