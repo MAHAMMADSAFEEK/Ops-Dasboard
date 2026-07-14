@@ -150,7 +150,7 @@ tr:hover td{background:var(--surface2);}
 .pov-ms-control i{font-size:13px;color:var(--muted);transition:transform 0.15s;flex-shrink:0;}
 .pov-ms.open .pov-ms-control i{transform:rotate(180deg);}
 .pov-ms-count{font-size:10px;font-weight:600;background:var(--accent);color:#fff;border-radius:10px;padding:1px 6px;flex-shrink:0;}
-.pov-ms-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;min-width:200px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);z-index:300;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.45);overflow:hidden;}
+.pov-ms-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;min-width:200px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);z-index:1100;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.45);overflow:hidden;}
 .pov-ms.open .pov-ms-panel{display:block;}
 .pov-ms-search{width:100%;font-size:12px;padding:8px 10px;border:none;border-bottom:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none;}
 .pov-ms-search::placeholder{color:var(--muted);}
@@ -236,6 +236,7 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
 .map-pin i{transform:rotate(45deg);color:#fff;font-size:13px;}
 @keyframes mapBlinkBlue{0%,100%{box-shadow:0 0 0 0 rgba(79,142,247,0.9),0 2px 8px rgba(0,0,0,.5);}50%{box-shadow:0 0 0 10px rgba(79,142,247,0),0 2px 8px rgba(0,0,0,.5);}}
 .map-pin.map-closed{animation:mapBlinkBlue 1.2s ease-in-out infinite;}
+#proj-map{z-index:1;}
 .leaflet-popup-content-wrapper{background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:10px;}
 .leaflet-popup-tip{background:var(--surface);}
 .leaflet-popup-content{font-size:12px;font-family:inherit;}
@@ -2123,7 +2124,7 @@ if(fSizeCat.size&&!fSizeCat.has(sizeCategoryOf(x)))return false;
   const tag=document.getElementById('pov-filter-tag');
   if(tag){tag.style.display=activeFilters?'inline':'none';if(activeFilters)tag.textContent=`${activeFilters} filter${activeFilters>1?'s':''} active`;}
   const totalProjects=rows.length;
-  let totalSize=0,assigned=0,notAssigned=0,completed=0,inProcess=0,pending=0,pendingAssigned=0,pendingNotAssigned=0,installCompleted=0;
+  let totalSize=0,assigned=0,notAssigned=0,completed=0,inProcess=0,pending=0,pendingAssigned=0,pendingNotAssigned=0,installCompleted=0,handoverPending=0,holdCnt=0,cancelCnt=0;
   const cityCount={},citySize={},sizeCatCount={};
   rows.forEach(x=>{
     const projId=lv(x,LEAD_COL.PID);
@@ -2131,16 +2132,21 @@ if(fSizeCat.size&&!fSizeCat.has(sizeCategoryOf(x)))return false;
     const size=povNum(lv(x,LEAD_COL.SIZE));
     const peAssigned=!!lv(x,LEAD_COL.PE);
     totalSize+=size;
-    if(peAssigned)assigned++;else notAssigned++;
+    const _hc=povHoldInfo(x);
+    const _isHC=_hc.onHold||_hc.cancelled;
+    if(_hc.cancelled)cancelCnt++;else if(_hc.onHold)holdCnt++;
+    if(peAssigned)assigned++;else if(!_isHC)notAssigned++;
     cityCount[city]=(cityCount[city]||0)+1;
     citySize[city]=(citySize[city]||0)+size;
     const cat=sizeCategoryOf(x);
     sizeCatCount[cat]=(sizeCatCount[cat]||0)+1;
     const m=computeProjectMetrics(projId);
-if(m.status==='done')completed++;
-    else if(m.status==='wip')inProcess++;
-    else {pending++; if(peAssigned)pendingAssigned++; else pendingNotAssigned++;}
+    if(m.status==='done')completed++;
     if(m.installStatus==='done')installCompleted++;
+    if(!_isHC){
+      if(peAssigned&&m.installStatus!=='done'&&m.status!=='done')inProcess++;
+      if(m.installStatus==='done'&&m.status!=='done')handoverPending++;
+    }
   });
   document.getElementById('pov-metrics').innerHTML=
     metric('ti-building-skyscraper','Total Projects',totalProjects,'From Lead Tracker','#4f8ef7')+
@@ -2148,11 +2154,13 @@ if(m.status==='done')completed++;
     metricWithBar('ti-user-off','Not Assigned',notAssigned,`${totalProjects?Math.round(notAssigned/totalProjects*100):0}% of projects`,'#e74c3c',totalProjects?notAssigned/totalProjects*100:0,'#e74c3c')+
     metricWithBar('ti-check','Installation Completed',installCompleted,`${totalProjects?Math.round(installCompleted/totalProjects*100):0}% · Pre-Commissioning done`,'#34c98a',totalProjects?installCompleted/totalProjects*100:0,'#34c98a')+
     metricWithBar('ti-circle-check','Project Completed',completed,`${totalProjects?Math.round(completed/totalProjects*100):0}% · all workplan done`,'#0d9488',totalProjects?completed/totalProjects*100:0,'#0d9488')+
-    metricWithBar('ti-loader','In Process',inProcess,`${totalProjects?Math.round(inProcess/totalProjects*100):0}% of projects`,'#f5a623',totalProjects?inProcess/totalProjects*100:0,'#f5a623')+
-    metricWithBar('ti-clock','Pending',pending,`${pendingAssigned} actual (assigned) · ${pendingNotAssigned} not assigned`,'#e74c3c',totalProjects?pending/totalProjects*100:0,'#e74c3c')+
-    (()=>{let dl=0;rows.forEach(x=>{const d=povComputeDelay(x);if(d&&d.delayBy>0&&!d.isDone)dl++;});return `<div class="metric" style="--mc:#e74c3c;cursor:pointer;" onclick="povShowDelayedLeads()"><div class="micon"><i class="ti ti-alert-triangle"></i></div><div class="mlbl">DELAYED LEADS</div><div class="mval">${dl}</div><div class="msub">${totalProjects?Math.round(dl/totalProjects*100):0}% of projects · click for breakdown</div></div>`;})()+
-    (()=>{let hd=0,cn=0;rows.forEach(x=>{const h=povHoldInfo(x);if(h.cancelled)cn++;else if(h.onHold)hd++;});return `<div class="metric" style="--mc:#9b6dff;cursor:pointer;" onclick="povShowHoldList('hold')"><div class="micon"><i class="ti ti-player-pause"></i></div><div class="mlbl">ON HOLD</div><div class="mval">${hd}</div><div class="msub">${totalProjects?Math.round(hd/totalProjects*100):0}% of projects · click for list</div></div>`+
-      `<div class="metric" style="--mc:#e0518a;cursor:pointer;" onclick="povShowHoldList('cancel')"><div class="micon"><i class="ti ti-ban"></i></div><div class="mlbl">CANCELLED</div><div class="mval">${cn}</div><div class="msub">${totalProjects?Math.round(cn/totalProjects*100):0}% of projects · click for list</div></div>`;})();
+
+    metricWithBar('ti-loader','On Going',inProcess,`${totalProjects?Math.round(inProcess/totalProjects*100):0}% · assigned, install pending`,'#f5a623',totalProjects?inProcess/totalProjects*100:0,'#f5a623')+
+    metricWithBar('ti-transfer','Handover Pending',handoverPending,`${totalProjects?Math.round(handoverPending/totalProjects*100):0}% · install done, O&M pending`,'#3bc0d8',totalProjects?handoverPending/totalProjects*100:0,'#3bc0d8')+
+    `<div class="metric" style="--mc:#9b6dff;cursor:pointer;" onclick="povShowHoldList('hold')"><div class="micon"><i class="ti ti-player-pause"></i></div><div class="mlbl">ON HOLD</div><div class="mval">${holdCnt}</div><div class="msub">${totalProjects?Math.round(holdCnt/totalProjects*100):0}% of projects · click for list</div></div>`+
+    `<div class="metric" style="--mc:#e0518a;cursor:pointer;" onclick="povShowHoldList('cancel')"><div class="micon"><i class="ti ti-ban"></i></div><div class="mlbl">CANCELLED</div><div class="mval">${cancelCnt}</div><div class="msub">${totalProjects?Math.round(cancelCnt/totalProjects*100):0}% of projects · click for list</div></div>`+
+    (()=>{let dl=0;rows.forEach(x=>{const d=povComputeDelay(x);if(d&&d.delayBy>0&&!d.isDone)dl++;});return `<div class="metric" style="--mc:#e74c3c;cursor:pointer;" onclick="povShowDelayedLeads()"><div class="micon"><i class="ti ti-alert-triangle"></i></div><div class="mlbl">DELAYED PROJECTS</div><div class="mval">${dl}</div><div class="msub">vs PO timeline · click for breakdown</div></div>`;})();
+  
   document.getElementById('pov-city-table').innerHTML=povCityTable(cityCount,citySize);
   const pieEl=document.getElementById('pov-sizecat-chart'); if(pieEl)pieEl.innerHTML=povRenderSizePie(sizeCatCount);
 document.getElementById('pov-delay-report').innerHTML=povDelayReport(updCounts,totalProjects);
@@ -2172,14 +2180,14 @@ document.getElementById('pov-delay-report').innerHTML=povDelayReport(updCounts,t
     const m=computeProjectMetrics(projId);
     let stageBadge;let installBadge;
     if(m.installStatus==='done')installBadge='<span class="badge bg">✓ Completed</span>';
-    else if(m.installStatus==='wip')installBadge=`<span class="badge bo">⟳ In Process</span>${m.finalStage&&m.finalStage!=='—'?`<div style="font-size:11px;color:var(--muted);margin-top:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.finalStage.replace(/"/g,'&quot;')}">${m.finalStage}</div>`:''}`;
+    else if(m.installStatus==='wip')installBadge=`<span class="badge bo">⟳ On Going</span>${m.finalStage&&m.finalStage!=='—'?`<div style="font-size:11px;color:var(--muted);margin-top:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.finalStage.replace(/"/g,'&quot;')}">${m.finalStage}</div>`:''}`;
     else installBadge='<span class="badge bgr">— Pending</span>';
     let projBadge;
     const _hi=povHoldInfo(x);
     if(_hi.cancelled)projBadge=`<span class="badge" style="background:rgba(224,81,138,0.15);color:#e0518a;border:1px solid rgba(224,81,138,0.3);">✕ Cancelled</span>${_hi.cancelDate?`<div style="font-size:10px;color:var(--muted);margin-top:2px;">${fmtDate(_hi.cancelDate)}</div>`:''}`;
     else if(_hi.onHold)projBadge=`<span class="badge bp">⏸ On Hold</span><div style="font-size:10px;color:var(--muted);margin-top:2px;">since ${_hi.holdSince?fmtDate(_hi.holdSince):'—'}</div>`;
     else if(m.status==='done')projBadge='<span class="badge bg">✓ Completed</span>';
-    else if(m.status==='wip')projBadge=`<span class="badge bo">⟳ In Process</span><div style="font-size:10px;color:var(--muted);margin-top:2px;">${m.weightedPct}%</div>`;
+    else if(m.status==='wip')projBadge=`<span class="badge bo">⟳ On Going</span><div style="font-size:10px;color:var(--muted);margin-top:2px;">${m.weightedPct}%</div>`;
     else projBadge='<span class="badge bgr">— Pending</span>';
     const escId=projId.replace(/'/g,"\\'");
     const escName=projName.replace(/'/g,"\\'");
@@ -2431,10 +2439,10 @@ if(!groups[g])groups[g]={count:0,size:0,completed:0,inProcess:0,pending:0,notAss
     metric('ti-building-skyscraper','Total Projects',tProjects,'All projects','#4f8ef7')+
     metric('ti-ruler-2','Total Size',Math.round(tSize).toLocaleString(),'Sum of capacity','#9b6dff')+
     metricWithBar('ti-circle-check','Completed',tCompleted,`${tProjects?Math.round(tCompleted/tProjects*100):0}% of projects`,'#34c98a',tProjects?tCompleted/tProjects*100:0,'#34c98a')+
-    metricWithBar('ti-loader','In Process',tInProcess,`${tProjects?Math.round(tInProcess/tProjects*100):0}% of projects`,'#f5a623',tProjects?tInProcess/tProjects*100:0,'#f5a623')+
+    metricWithBar('ti-loader','On Going',tInProcess,`${tProjects?Math.round(tInProcess/tProjects*100):0}% of projects`,'#f5a623',tProjects?tInProcess/tProjects*100:0,'#f5a623')+
     metricWithBar('ti-clock','Pending',tPending,`${tProjects?Math.round(tPending/tProjects*100):0}% of projects`,'#e74c3c',tProjects?tPending/tProjects*100:0,'#e74c3c')+
     metricWithBar('ti-user-off','Not Assigned',tNotAssigned,`${tProjects?Math.round(tNotAssigned/tProjects*100):0}% of projects`,'#e74c3c',tProjects?tNotAssigned/tProjects*100:0,'#e74c3c');
-  document.getElementById('rpt-head').innerHTML=`<tr><th>#</th><th>${dim.label}</th><th style="text-align:right;">Projects</th><th style="text-align:right;">Size</th><th style="text-align:right;">Installation Completed</th><th style="text-align:right;">Completed</th><th style="text-align:right;">Completed Size</th><th style="text-align:right;">In Process</th><th style="text-align:right;">Pending</th><th style="text-align:right;">Not Assigned</th><th style="min-width:130px;">Completion %</th></tr>`;
+  document.getElementById('rpt-head').innerHTML=`<tr><th>#</th><th>${dim.label}</th><th style="text-align:right;">Projects</th><th style="text-align:right;">Size</th><th style="text-align:right;">Installation Completed</th><th style="text-align:right;">Completed</th><th style="text-align:right;">Completed Size</th><th style="text-align:right;">On Going</th><th style="text-align:right;">Pending</th><th style="text-align:right;">Not Assigned</th><th style="min-width:130px;">Completion %</th></tr>`;
   const tbody=document.getElementById('rpt-body');
   const entries=Object.entries(groups).sort((a,b)=>b[1].count-a[1].count);
   if(!entries.length){tbody.innerHTML='<tr><td colspan="11" class="empty">No data</td></tr>';return;}
@@ -4181,7 +4189,7 @@ function buildHRC(){
   const _origBuildPOV=buildPOV;
   buildPOV=function(){_origBuildPOV.apply(this,arguments);povWireDrill();};
 
-  const METRIC_KEYS=['total','size','notassigned','installcompleted','completed','inprocess','pending','delayed'];
+  const METRIC_KEYS=['total','size','notassigned','installcompleted','completed','inprocess','handover'];
 
   function povWireDrill(){
     document.querySelectorAll('#pov-metrics .metric').forEach((c,i)=>{
@@ -4219,12 +4227,12 @@ function buildHRC(){
       return true;
     });
     if(_povDelayBucket)rows=rows.filter(x=>povUpdBucketOf(x)===_povDelayBucket);
-    if(key==='notassigned')      rows=rows.filter(x=>!lv(x,LEAD_COL.PE));
+    if(key==='notassigned')      rows=rows.filter(x=>{const h=povHoldInfo(x);return !lv(x,LEAD_COL.PE)&&!h.onHold&&!h.cancelled;});
     else if(key==='installcompleted')rows=rows.filter(x=>computeProjectMetrics(lv(x,LEAD_COL.PID)).installStatus==='done');
     else if(key==='completed')   rows=rows.filter(x=>computeProjectMetrics(lv(x,LEAD_COL.PID)).status==='done');
     else if(key==='delayed')     rows=rows.filter(x=>{const d=povComputeDelay(x);return d&&d.delayBy>0&&!d.isDone;});
-    else if(key==='inprocess')   rows=rows.filter(x=>computeProjectMetrics(lv(x,LEAD_COL.PID)).status==='wip');
-    else if(key==='pending')     rows=rows.filter(x=>computeProjectMetrics(lv(x,LEAD_COL.PID)).status==='pending');
+    else if(key==='inprocess')   rows=rows.filter(x=>{const h=povHoldInfo(x);if(h.onHold||h.cancelled||!lv(x,LEAD_COL.PE))return false;const m=computeProjectMetrics(lv(x,LEAD_COL.PID));return m.installStatus!=='done'&&m.status!=='done';});
+    else if(key==='handover')    rows=rows.filter(x=>{const h=povHoldInfo(x);if(h.onHold||h.cancelled)return false;const m=computeProjectMetrics(lv(x,LEAD_COL.PID));return m.installStatus==='done'&&m.status!=='done';});
     else if(key.startsWith('city:'))  rows=rows.filter(x=>lv(x,LEAD_COL.CITY)===key.slice(5));
     else if(key.startsWith('size:'))  rows=rows.filter(x=>sizeCategoryOf(x)===key.slice(5));
     else if(key.startsWith('bucket:'))rows=rows.filter(x=>povUpdBucketOf(x)===key.slice(7));
@@ -4232,7 +4240,7 @@ function buildHRC(){
   }
 
   function povDrillTitle(key){
-    const m={total:'Total Projects',size:'Total Project Size',notassigned:'Not Assigned',installcompleted:'Installation Completed',completed:'Project Completed',inprocess:'In Process',pending:'Pending',delayed:'Delayed Leads'};
+    const m={total:'Total Projects',size:'Total Project Size',notassigned:'Not Assigned',installcompleted:'Installation Completed',completed:'Project Completed',inprocess:'On Going',handover:'Handover Pending',delayed:'Delayed Projects'};
     if(m[key])return m[key];
     if(key.startsWith('city:'))return 'Projects in '+key.slice(5);
     if(key.startsWith('size:'))return key.slice(5)+' Size Projects';
@@ -4912,7 +4920,7 @@ function povShowPEDetail(idx){
   const cards=
     metric('ti-briefcase','Total Projects',s.total,'Assigned','#4f8ef7')+
     metricWithBar('ti-circle-check','Completed',s.done,`${Math.round(s.doneRate*100)}% completion rate`,'#34c98a',s.doneRate*100,'#34c98a')+
-    metric('ti-loader','In Process',s.wip,'','#f5a623')+
+    metric('ti-loader','On Going',s.wip,'','#f5a623')+
     metric('ti-clock','Pending',s.pending,'','#8b92b0')+
     metricWithBar('ti-alert-triangle','Delayed',s.delayed,`${Math.round(s.delayRate*100)}% delay rate`,'#e74c3c',s.delayRate*100,'#e74c3c')+
     metric('ti-clock-hour-4','Avg TAT',s.avgTat?s.avgTat+'d':'—','On completed','#9b6dff')+
@@ -4983,7 +4991,7 @@ function povShowCityDetail(idx){
     metric('ti-building-skyscraper','Total Projects',s.total,'In city','#4f8ef7')+
     metric('ti-ruler-2','Total Size',Math.round(s.size).toLocaleString(),'kW','#9b6dff')+
     metricWithBar('ti-circle-check','Completed',s.done,`${Math.round(s.doneRate*100)}% completion`,'#34c98a',s.doneRate*100,'#34c98a')+
-    metric('ti-loader','In Process',s.wip,'','#f5a623')+
+    metric('ti-loader','On Going',s.wip,'','#f5a623')+
     metric('ti-clock','Pending',s.pending,'','#8b92b0')+
     metricWithBar('ti-alert-triangle','Delayed',s.delayed,`${Math.round(s.delayRate*100)}% delay rate`,'#e74c3c',s.delayRate*100,'#e74c3c')+
     metric('ti-clock-hour-4','Avg TAT',s.avgTat?s.avgTat+'d':'—','On completed','#9b6dff')+
@@ -5422,7 +5430,7 @@ let _projMap=null,_projMapLayer=null;
 const MAP_STATUS_CFG={
   closed:  {label:'Project Closed',                       color:'#4f8ef7', icon:'ti-sun',   blink:true},
   install: {label:'Installation Completed (O&M pending)', color:'#34c98a', icon:'ti-check', blink:false},
-  wip:     {label:'In Process',                           color:'#f5a623', icon:'ti-loader',blink:false},
+  wip:     {label:'On Going',                           color:'#f5a623', icon:'ti-loader',blink:false},
   notass:  {label:'Yet to Assign',                        color:'#e74c3c', icon:'ti-user-off',blink:false}
 };
 function mapParseLatLong(raw){
