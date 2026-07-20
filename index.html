@@ -331,9 +331,14 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
       <div class="pov-ms" id="pov-ms-pname"></div>
     </div>
 
-    <div class="pe-filter-group">
+<div class="pe-filter-group">
       <label>Project ID</label>
       <div class="pov-ms" id="pov-ms-pid"></div>
+    </div>
+
+    <div class="pe-filter-group">
+      <label>Aging</label>
+      <div class="pov-ms" id="pov-ms-aging"></div>
     </div>
 
     <div class="pe-fdivider"></div>
@@ -433,6 +438,7 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
       <div class="pe-filter-group"><label>Size Category</label><div class="pov-ms" id="pov-ms-sizecat-prep"></div></div>
       <div class="pe-filter-group"><label>Project Name</label><div class="pov-ms" id="pov-ms-pname-prep"></div></div>
       <div class="pe-filter-group"><label>Project ID</label><div class="pov-ms" id="pov-ms-pid-prep"></div></div>
+      <div class="pe-filter-group"><label>Aging</label><div class="pov-ms" id="pov-ms-aging-prep"></div></div>
       <div class="pe-fdivider"></div>
       <div class="pe-filter-actions"><span class="spacer"></span><button class="pe-clr-btn" onclick="clearPOVFilters()"><i class="ti ti-x" style="font-size:12px;"></i> Clear Filters</button></div>
     </div>
@@ -630,6 +636,7 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
       <div class="pe-filter-group"><label>Size Category</label><div class="pov-ms" id="pov-ms-sizecat-map"></div></div>
       <div class="pe-filter-group"><label>Project Name</label><div class="pov-ms" id="pov-ms-pname-map"></div></div>
       <div class="pe-filter-group"><label>Project ID</label><div class="pov-ms" id="pov-ms-pid-map"></div></div>
+      <div class="pe-filter-group"><label>Aging</label><div class="pov-ms" id="pov-ms-aging-map"></div></div>
       <div class="pe-fdivider"></div>
       <div class="pe-filter-actions"><span class="spacer"></span><button class="pe-clr-btn" onclick="clearPOVFilters()"><i class="ti ti-x" style="font-size:12px;"></i> Clear Filters</button></div>
     </div>
@@ -1739,7 +1746,7 @@ const rows=D.lead.r.filter(x=>{
     if(_povMS.status.size&&!povProjectStatuses(x).some(t=>_povMS.status.has(t)))return false;
     return true;
   });
-  const pids=rows.filter(x=>povUpdBucketOf(x)===b).map(x=>lv(x,LEAD_COL.PID));
+  const pids=rows.filter(x=>povAgingOf(x)===b).map(x=>lv(x,LEAD_COL.PID));
   if(!pids.length){alert('No projects in this bucket');return;}
   // Set PID filter to these projects
   _povMS.pid=new Set(pids);
@@ -1760,7 +1767,27 @@ function lv(row,i){return (i>=0 && row[i]!=null)?String(row[i]).trim():'';}
 function povNum(s){if(!s)return 0;const n=parseFloat(String(s).replace(/[^0-9.\-]/g,''));return isNaN(n)?0:n;}
 
 const POV_STATUSES=['Not Assigned','Installation On Going','Installation Completed But O&M pending','Project Closed','On Hold','Cancelled'];
+const AGING_LABELS=['Today updated','Yesterday updated','3–5 days','5–7 days','7–10 days','10–15 days','15–20 days','20–30 days','30+ days','Never updated'];
+function povAgingOf(x){
+  const m=computeProjectMetrics(lv(x,LEAD_COL.PID));
+  if(m.status==='done')return '';
+  if(!m.lastActivity)return 'Never updated';
+  const t=new Date();t.setHours(0,0,0,0);
+  const la=new Date(m.lastActivity);la.setHours(0,0,0,0);
+  const d=Math.floor((t-la)/86400000);
+  if(d<=0)return 'Today updated';
+  if(d===1)return 'Yesterday updated';
+  if(d<=5)return '3–5 days';
+  if(d<=7)return '5–7 days';
+  if(d<=10)return '7–10 days';
+  if(d<=15)return '10–15 days';
+  if(d<=20)return '15–20 days';
+  if(d<=30)return '20–30 days';
+  return '30+ days';
+}
+function povAgingColor(l){return {'Today updated':'#34c98a','Yesterday updated':'#3bc0d8','3–5 days':'#4f8ef7','5–7 days':'#f5a623','7–10 days':'#f5a623','10–15 days':'#e8743b','15–20 days':'#e8743b','20–30 days':'#e74c3c','30+ days':'#c0392b','Never updated':'#8b92b0'}[l]||'#8b92b0';}
 const POV_MS_CFG={
+  
   city:    {col:'CITY',    all:'All Cities',    ph:'Search cities…'},
   cluster: {col:'CLUSTER', all:'All Clusters',  ph:'Search clusters…'},
   citymgr: {col:'CITYMGR', all:'All City Mgrs', ph:'Search city managers…'},
@@ -1768,13 +1795,14 @@ const POV_MS_CFG={
   status:  {col:null,      all:'All Statuses',   ph:'Search status…', fixed:POV_STATUSES},
   sizecat: {col:null,      all:'All Sizes',      ph:'Search size…',   fixed:SIZE_CATEGORIES},
   pname:   {col:'PNAME',   all:'All Projects',   ph:'Search project name…'},
-  pid:     {col:'PID',     all:'All Project IDs',ph:'Search project ID…'}
+  pid:     {col:'PID',     all:'All Project IDs',ph:'Search project ID…'},
+  aging:   {col:null,      all:'All Aging',      ph:'Search aging…',  fixed:AGING_LABELS}
 };
 
 
-let _povMS={city:new Set(),cluster:new Set(),citymgr:new Set(),pe:new Set(),sizecat:new Set(),status:new Set(),pname:new Set(),pid:new Set()};
-let _povMSAll={city:[],cluster:[],citymgr:[],pe:[],sizecat:SIZE_CATEGORIES.slice(),status:POV_STATUSES.slice(),pname:[],pid:[]};
-let _povMSCounts={city:{},cluster:{},citymgr:{},pe:{},sizecat:{},status:{},pname:{},pid:{}};
+let _povMS={city:new Set(),cluster:new Set(),citymgr:new Set(),pe:new Set(),sizecat:new Set(),status:new Set(),pname:new Set(),pid:new Set(),aging:new Set()};
+let _povMSAll={city:[],cluster:[],citymgr:[],pe:[],sizecat:SIZE_CATEGORIES.slice(),status:POV_STATUSES.slice(),pname:[],pid:[],aging:AGING_LABELS.slice()};
+let _povMSCounts={city:{},cluster:{},citymgr:{},pe:{},sizecat:{},status:{},pname:{},pid:{},aging:{}};
 
   
 
@@ -1809,6 +1837,8 @@ const sets={city:new Set(),cluster:new Set(),citymgr:new Set(),pe:new Set(),pnam
   });
   _povMSAll.status=POV_STATUSES.slice();
   _povMS.status=new Set([..._povMS.status].filter(v=>POV_STATUSES.includes(v)));
+  _povMSAll.aging=AGING_LABELS.slice();
+  _povMS.aging=new Set([..._povMS.aging].filter(v=>AGING_LABELS.includes(v)));
   Object.keys(POV_MS_CFG).forEach(buildPOVMSWidget);
   recomputePOVOptions();
 }
@@ -1878,6 +1908,7 @@ if(exceptKey!=='sizecat' && _povMS.sizecat.size && !_povMS.sizecat.has(sizeCateg
   if(exceptKey!=='status'  && _povMS.status.size){ if(!povProjectStatuses(x).some(t=>_povMS.status.has(t)))return false; }
   if(exceptKey!=='pname'   && _povMS.pname.size && !_povMS.pname.has(lv(x,LEAD_COL.PNAME)))return false;
   if(exceptKey!=='pid'     && _povMS.pid.size   && !_povMS.pid.has(lv(x,LEAD_COL.PID)))return false;
+  if(exceptKey!=='aging'   && _povMS.aging.size && !_povMS.aging.has(povAgingOf(x)))return false;
   return true;
 }
 
@@ -1891,6 +1922,9 @@ function recomputePOVOptions(){
     } else if(key==='sizecat'){
       r.forEach(x=>{ if(povRowPassesExcept(x,key)){ const c=sizeCategoryOf(x); counts[c]=(counts[c]||0)+1; } });
       _povMSAll[key]=SIZE_CATEGORIES.slice();
+    } else if(key==='aging'){
+      r.forEach(x=>{ if(povRowPassesExcept(x,key)){ const a=povAgingOf(x); if(a)counts[a]=(counts[a]||0)+1; } });
+      _povMSAll[key]=AGING_LABELS.slice();
     } else {
       const colIdx=LEAD_COL[POV_MS_CFG[key].col];
       r.forEach(x=>{ if(povRowPassesExcept(x,key)){ const val=lv(x,colIdx); if(val)counts[val]=(counts[val]||0)+1; } });
@@ -2076,28 +2110,28 @@ function povUpdBucketLabel(key){if(key==='upNever')return 'Never updated';const 
 
 function povDelayReport(counts,totalProjects){
   if(!totalProjects&&!_povDelayBucket)return'<div class="empty">No data</div>';
-  const delayed=(counts.u10||0)+(counts.u15||0)+(counts.u20||0)+(counts.u30||0)+(counts.u30p||0);
-  const upNever=counts.upNever||0;
+  const delayed=['7–10 days','10–15 days','15–20 days','20–30 days','30+ days'].reduce((s,l)=>s+(counts[l]||0),0);
+  const never=counts['Never updated']||0;
   const active=_povDelayBucket;
-const line=(key,color,icon,text,count)=>{const isActive=active===key;const dim=active&&!isActive?'opacity:.45;':'';
+  const ICONS={'Today updated':'ti-circle-check','Yesterday updated':'ti-clock','3–5 days':'ti-clock-hour-4','5–7 days':'ti-clock-exclamation','7–10 days':'ti-alert-triangle','10–15 days':'ti-alert-triangle','15–20 days':'ti-alert-octagon','20–30 days':'ti-alert-octagon','30+ days':'ti-alert-octagon','Never updated':'ti-clock-off'};
+  const line=(label)=>{
+    const color=povAgingColor(label),icon=ICONS[label]||'ti-clock',count=counts[label]||0;
+    const isActive=active===label;const dim=active&&!isActive?'opacity:.45;':'';
     const pct=totalProjects?Math.round(count/totalProjects*100):0;
-    return `<tr onclick="setPOVDelayBucket('${key}')" style="cursor:pointer;${isActive?`background:${color}1a;`:''}${dim}">
+    return `<tr onclick="setPOVDelayBucket('${label}')" style="cursor:pointer;${isActive?`background:${color}1a;`:''}${dim}">
     <td style="width:1%;padding:6px 4px;"><i class="ti ${icon}" style="color:${color};font-size:15px;"></i></td>
-    <td style="font-size:12px;padding:6px 4px;${isActive?`color:${color};font-weight:600;`:''}">${text}${isActive?' <i class="ti ti-filter-check" style="margin-left:4px;font-size:11px;"></i>':''}</td>
+    <td style="font-size:12px;padding:6px 4px;${isActive?`color:${color};font-weight:600;`:''}">${label}${isActive?' <i class="ti ti-filter-check" style="margin-left:4px;font-size:11px;"></i>':''}</td>
     <td style="text-align:right;font-size:13px;font-weight:600;color:${color};white-space:nowrap;padding:6px 4px;">${count}</td>
     <td style="text-align:right;font-size:11px;color:var(--muted);white-space:nowrap;padding:6px 4px;">${pct}%</td>
     <td style="min-width:110px;padding:6px 4px;"><div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:${color};border-radius:3px;"></div></div></td>
   </tr>`;};
   const banner=active
-    ? `<div style="margin-bottom:12px;padding:10px 12px;background:rgba(79,142,247,0.12);border:1px solid rgba(79,142,247,0.35);border-radius:8px;font-size:12px;color:var(--text);display:flex;justify-content:space-between;align-items:center;gap:8px;"><div><i class="ti ti-filter" style="margin-right:6px;color:var(--accent);"></i>Filtering tab by update bucket. Click again or use <strong>Clear</strong> to reset.</div><button onclick="clearPOVDelayBucket()" style="background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;">Clear</button></div>`
+    ? `<div style="margin-bottom:12px;padding:10px 12px;background:rgba(79,142,247,0.12);border:1px solid rgba(79,142,247,0.35);border-radius:8px;font-size:12px;color:var(--text);display:flex;justify-content:space-between;align-items:center;gap:8px;"><div><i class="ti ti-filter" style="margin-right:6px;color:var(--accent);"></i>Filtering tab by aging bucket. Click again or use <strong>Clear</strong> to reset.</div><button onclick="clearPOVDelayBucket()" style="background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;">Clear</button></div>`
     : `<div style="margin-bottom:12px;padding:10px 12px;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);border-radius:8px;font-size:12px;color:var(--text);">
-        <strong style="color:#e74c3c;">${delayed}</strong> project${delayed===1?'':'s'} delayed — no activity update in 7+ days${upNever?`, and <strong style="color:#8b92b0;">${upNever}</strong> never updated`:''}. <span style="color:var(--muted);">Click a row to filter the tab.</span>
+        <strong style="color:#e74c3c;">${delayed}</strong> project${delayed===1?'':'s'} with no update in 7+ days${never?`, and <strong style="color:#8b92b0;">${never}</strong> never updated`:''}. Completed projects excluded. <span style="color:var(--muted);">Click a row to filter the tab.</span>
       </div>`;
-return banner+`<table style="font-size:12px;width:100%;">
-    <tbody>
-      ${POV_UPD_BUCKETS.map(b=>line(b.key,b.color,b.icon,'No update — '+b.label,counts[b.key]||0)).join('')}
-      ${line('upNever','#8b92b0','ti-clock-off','Never updated (no attendance or DPR yet)',upNever)}
-    </tbody>
+  return banner+`<table style="font-size:12px;width:100%;">
+    <tbody>${AGING_LABELS.map(line).join('')}</tbody>
   </table>`;
 }
 
@@ -2112,14 +2146,15 @@ function buildPOV(){
     if(fPE.size&&!fPE.has(lv(x,LEAD_COL.PE)))return false;
 if(fSizeCat.size&&!fSizeCat.has(sizeCategoryOf(x)))return false;
     if(fStatus.size&&!povProjectStatuses(x).some(t=>fStatus.has(t)))return false;
-    if(_povMS.pname.size&&!_povMS.pname.has(lv(x,LEAD_COL.PNAME)))return false;
+if(_povMS.pname.size&&!_povMS.pname.has(lv(x,LEAD_COL.PNAME)))return false;
     if(_povMS.pid.size&&!_povMS.pid.has(lv(x,LEAD_COL.PID)))return false;
+    if(_povMS.aging.size&&!_povMS.aging.has(povAgingOf(x)))return false;
     return true;
   });
   const today=new Date();today.setHours(0,0,0,0);
- const updCounts={upNever:0};POV_UPD_BUCKETS.forEach(b=>updCounts[b.key]=0);
-  baseRows.forEach(x=>{updCounts[povUpdBucketOf(x)]++;});
-  const rows=_povDelayBucket?baseRows.filter(x=>povUpdBucketOf(x)===_povDelayBucket):baseRows;
+ const updCounts={};AGING_LABELS.forEach(l=>updCounts[l]=0);
+  baseRows.forEach(x=>{const a=povAgingOf(x);if(a)updCounts[a]++;});
+  const rows=_povDelayBucket?baseRows.filter(x=>povAgingOf(x)===_povDelayBucket):baseRows;
   const activeFilters=[fCity,fCluster,fCityMgr,fPE,fSizeCat,fStatus].filter(s=>s.size).length+(_povDelayBucket?1:0);
   const tag=document.getElementById('pov-filter-tag');
   if(tag){tag.style.display=activeFilters?'inline':'none';if(activeFilters)tag.textContent=`${activeFilters} filter${activeFilters>1?'s':''} active`;}
@@ -2164,9 +2199,9 @@ if(fSizeCat.size&&!fSizeCat.has(sizeCategoryOf(x)))return false;
   document.getElementById('pov-city-table').innerHTML=povCityTable(cityCount,citySize);
   const pieEl=document.getElementById('pov-sizecat-chart'); if(pieEl)pieEl.innerHTML=povRenderSizePie(sizeCatCount);
 document.getElementById('pov-delay-report').innerHTML=povDelayReport(updCounts,totalProjects);
-  document.getElementById('pov-head').innerHTML='<tr><th>#</th><th>City</th><th>Project ID</th><th>Project Name</th><th>Size Category</th><th>Capacity</th><th>City Manager</th><th>CPM</th><th>PE</th><th>Project timeline start from</th><th>Installation start date</th><th>Installation completed date</th><th>Installation TAT</th><th>Project TAT</th><th>Completion %</th><th>Installation Status</th><th>Project Status</th><th>Remarks</th><th>Phase Summary</th><th>Detailed Report</th></tr>';
+  document.getElementById('pov-head').innerHTML='<tr><th>#</th><th>City</th><th>Project ID</th><th>Project Name</th><th>Size Category</th><th>Capacity</th><th>City Manager</th><th>CPM</th><th>PE</th><th>Project timeline start from</th><th>Installation start date</th><th>Installation completed date</th><th>Installation TAT</th><th>Project TAT</th><th>Completion %</th><th>Installation Status</th><th>Project Status</th><th>Remarks</th><th>Aging</th><th>Phase Summary</th><th>Detailed Report</th></tr>';
   const tbody=document.getElementById('pov-body');
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="19" class="empty">No projects match the selected filters</td></tr>';return;}
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="20" class="empty">No projects match the selected filters</td></tr>';return;}
   const sortedRows=[...rows].sort((a,b)=>{const c=lv(a,LEAD_COL.CITY).localeCompare(lv(b,LEAD_COL.CITY));if(c!==0)return c;return lv(a,LEAD_COL.PNAME).localeCompare(lv(b,LEAD_COL.PNAME));});
   tbody.innerHTML=sortedRows.map((x,i)=>{
     const city=lv(x,LEAD_COL.CITY)||'—';
@@ -2229,7 +2264,8 @@ document.getElementById('pov-delay-report').innerHTML=povDelayReport(updCounts,t
       <td>${pctCell}</td>
       <td>${installBadge}</td>
       <td>${projBadge}</td>
-      <td style="font-size:11px;color:var(--muted)">—</td>
+<td style="font-size:11px;color:var(--muted)">—</td>
+      <td>${(()=>{const a=povAgingOf(x);if(!a)return '<span style="color:var(--muted);font-size:11px;">—</span>';const c=povAgingColor(a);return `<span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;font-weight:600;white-space:nowrap;">${a}</span>`;})()}</td>
             <td>${phaseLink}</td>
       <td>${reportLink}</td> 
     </tr>`;
@@ -3162,10 +3198,13 @@ function pemrDateExpandAll(){
 function pemrDateCollapseAll(){ _pemrDateExp.clear(); if(_pemrDateDk) pemrShowDateSummary(_pemrDateDk); }
 
   let _pemrDateView='hier';
+  let _pemrDateCardF='';   // ''|'upd'|'leave'|'weekoff'|'pending'
+function pemrDateSetCardF(f){_pemrDateCardF=(_pemrDateCardF===f)?'':f;if(_pemrDateDk)pemrShowDateSummary(_pemrDateDk);}
 function pemrDateSetView(v){_pemrDateView=v;if(_pemrDateDk)pemrShowDateSummary(_pemrDateDk);}
 
 function pemrShowDateSummary(dk){
   const ctx=_pemrCtx; if(!ctx||!ctx.attByPD) return;
+  if(_pemrDateDk!==dk)_pemrDateCardF='';
   _pemrDateDk=dk;
   const [y,m,d]=dk.split('-').map(Number);
   const dateLabel=new Date(y,m-1,d).toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'short',year:'numeric'});
@@ -3196,22 +3235,33 @@ function pemrShowDateSummary(dk){
     peStats[pe]=st;
   });
 
+ let peUpd=0,peFull=0,pePart=0,pePend=0,peLeave=0,peWO=0;
+  const peCat={};
+  pes.forEach(pe=>{
+    const st=peStats[pe];
+    const lv=(ctx.leavesByPE&&ctx.leavesByPE[pe]&&ctx.leavesByPE[pe].get)?(ctx.leavesByPE[pe].get(dk)||''):'';
+    if(st.onLeave){if(String(lv).toLowerCase().indexOf('week')>=0){peWO++;peCat[pe]='weekoff';}else{peLeave++;peCat[pe]='leave';}return;}
+    if(st.total===0){peCat[pe]='none';return;}
+    if(st.updated>0){peUpd++;if(st.updated>=st.total)peFull++;else pePart++;peCat[pe]='upd';}
+    else{pePend++;peCat[pe]='pending';}
+  });
+  const peActive=peUpd+pePend;
+  const selCard=(key)=>_pemrDateCardF===key?'outline:2px solid var(--accent);':'';
+  const cardBtn=(key,inner)=>`<div onclick="pemrDateSetCardF('${key}')" style="cursor:pointer;${selCard(key)}border-radius:16px;">${inner}</div>`;
   const cards=
     metric('ti-users','Total PEs',pes.length,'In current view','#4f8ef7')+
-    metric('ti-briefcase','Total Projects',gTotal,'Across all PEs','#9b6dff')+
-    metricWithBar('ti-calendar-check','Updated',gUpd,`${gTotal?Math.round(gUpd/gTotal*100):0}% project-days`,'#34c98a',gTotal?gUpd/gTotal*100:0,'#34c98a')+
-    metricWithBar('ti-calendar-x','Pending',gPend,`${gTotal?Math.round(gPend/gTotal*100):0}% project-days`,'#e74c3c',gTotal?gPend/gTotal*100:0,'#e74c3c')+
-    metric('ti-map-pin','Onsite Visit',gOn,'Project-days','#34c98a')+
-    metric('ti-clipboard','Without Visit Update',gWo,'Project-days','#3bc0d8')+
-    metric('ti-alert-triangle','No Activity',gNa,'Project-days','#f5a623')+
-    metric('ti-beach','On Leave',gOnLeave,'PEs','#3bc0d8');
-
+    cardBtn('upd',metricWithBar('ti-user-check','PEs Updated',peUpd,`Full ${peFull} · Partial ${pePart} · ${peActive?Math.round(peUpd/peActive*100):0}%`,'#34c98a',peActive?peUpd/peActive*100:0,'#34c98a'))+
+    cardBtn('leave',metric('ti-beach','On Leave',peLeave,'PEs','#3bc0d8'))+
+    cardBtn('weekoff',metric('ti-calendar-off','Week-Off',peWO,'PEs','#9b6dff'))+
+    cardBtn('pending',metricWithBar('ti-user-x','Pending',pePend,`${peActive?Math.round(pePend/peActive*100):0}% of active PEs`,'#e74c3c',peActive?pePend/peActive*100:0,'#e74c3c'));
+  const pesView=_pemrDateCardF?pes.filter(pe=>peCat[pe]===_pemrDateCardF):pes;
   const escq=s=>String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  
 
   // ── HIERARCHY VIEW ──
   function renderHier(){
-    const tree={};
-    pes.forEach(pe=>{
+   const tree={};
+    pesView.forEach(pe=>{
       const c=ctx.peClusterMap[pe]||'(No Cluster)';
       const cm=ctx.peCityMgrMap[pe]||'(No City Manager)';
       if(!tree[c]) tree[c]={};
@@ -3275,7 +3325,7 @@ function pemrShowDateSummary(dk){
 
   // ── PE-WISE FLAT VIEW ──
   function renderFlat(){
-    const rows=pes.map(pe=>{
+    const rows=pesView.map(pe=>{
       const st=peStats[pe]||{total:0,updated:0,pending:0,onsite:0,without:0,noact:0,onLeave:false};
       let statusKey='none';
       if(st.onLeave)statusKey='leave';
@@ -4224,6 +4274,7 @@ function buildHRC(){
       if(fPE.size&&!fPE.has(lv(x,LEAD_COL.PE)))return false;
       if(fSizeCat.size&&!fSizeCat.has(sizeCategoryOf(x)))return false;
       if(fStatus.size&&!povProjectStatuses(x).some(t=>fStatus.has(t)))return false;
+      if(_povMS.aging.size&&!_povMS.aging.has(povAgingOf(x)))return false;
       return true;
     });
     if(_povDelayBucket)rows=rows.filter(x=>povUpdBucketOf(x)===_povDelayBucket);
@@ -4496,7 +4547,8 @@ function povGetBaseRows(){
     if(_povMS.sizecat.size&&!_povMS.sizecat.has(sizeCategoryOf(x)))return false;
     if(_povMS.status.size&&!povProjectStatuses(x).some(t=>_povMS.status.has(t)))return false;
     if(_povMS.pname.size&&!_povMS.pname.has(lv(x,LEAD_COL.PNAME)))return false;
-    if(_povMS.pid.size&&!_povMS.pid.has(lv(x,LEAD_COL.PID)))return false;
+   if(_povMS.pid.size&&!_povMS.pid.has(lv(x,LEAD_COL.PID)))return false;
+    if(_povMS.aging.size&&!_povMS.aging.has(povAgingOf(x)))return false;
     return true;
   });
 }
