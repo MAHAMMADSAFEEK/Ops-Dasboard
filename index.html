@@ -283,7 +283,8 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
 <div class="main" id="main" style="display:none;">
 <div class="tabs">
     <button class="tab active" onclick="switchTab('pov',this)"><i class="ti ti-layout-dashboard"></i> Project Overview</button>
-    <button class="tab" onclick="switchTab('prep',this)"><i class="ti ti-table"></i> Project Report</button>
+   <button class="tab" onclick="switchTab('prep',this)"><i class="ti ti-table"></i> Project Report</button>
+    <button class="tab" onclick="switchTab('nur',this)"><i class="ti ti-alert-triangle"></i> Not Updated Report</button>
     <button class="tab" onclick="switchTab('proj',this)"><i class="ti ti-building-skyscraper"></i> Project Summary</button>
     <button class="tab" onclick="switchTab('rpt',this)"><i class="ti ti-chart-pie"></i> Reports</button>
     <button class="tab" onclick="switchTab('hrc',this)"><i class="ti ti-binary-tree"></i> Hierarchy Report</button>
@@ -444,10 +445,43 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
       <div class="pe-fdivider"></div>
       <div class="pe-filter-actions"><span class="spacer"></span><button class="pe-clr-btn" onclick="clearPOVFilters()"><i class="ti ti-x" style="font-size:12px;"></i> Clear Filters</button></div>
     </div>
-    <div style="padding:20px 24px;">
+<div style="padding:20px 24px;">
       <div class="card">
         <div class="card-title"><i class="ti ti-table"></i> Project Master</div>
         <div class="table-wrap"><table><thead id="pov-head"></thead><tbody id="pov-body"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOT UPDATED REPORT TAB -->
+  <div id="tab-nur" class="tab-content">
+    <div class="pe-filter-bar">
+      <div class="pe-filter-group"><label>Date</label><input type="date" id="nur-f-date" onchange="buildNUR()"/></div>
+      <div class="pe-filter-group"><label>City</label><div class="pov-ms nur-ms" id="nur-ms-city"></div></div>
+      <div class="pe-filter-group"><label>Cluster Head</label><div class="pov-ms nur-ms" id="nur-ms-cluster"></div></div>
+      <div class="pe-filter-group"><label>City Manager</label><div class="pov-ms nur-ms" id="nur-ms-citymgr"></div></div>
+      <div class="pe-filter-group"><label>PE</label><div class="pov-ms nur-ms" id="nur-ms-pe"></div></div>
+      <div class="pe-fdivider"></div>
+      <div class="pe-filter-actions">
+        <span class="spacer"></span>
+        <div style="display:flex;gap:8px;">
+          <button class="pe-clr-btn" onclick="clearNURFilters()"><i class="ti ti-x" style="font-size:12px;"></i> Clear Filters</button>
+          <button class="pe-clr-btn" onclick="downloadNURCSV()"><i class="ti ti-download" style="font-size:12px;"></i> Download CSV</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:20px 24px 0;">
+      <div class="section-title">Not Updated / No Activity Report</div>
+      <div class="metrics" id="nur-metrics"></div>
+    </div>
+    <div style="padding:0 24px 20px;">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-table"></i> Project-wise Detail</div>
+        <div class="table-wrap"><table><thead id="nur-head"></thead><tbody id="nur-body"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-users-group"></i> Cluster Head-wise Count</div>
+        <div class="table-wrap"><table><thead id="nur-cl-head"></thead><tbody id="nur-cl-body"></tbody></table></div>
       </div>
     </div>
   </div>
@@ -800,7 +834,8 @@ function parseSheet(gid){return new Promise((res,rej)=>{
     error:e=>{clearTimeout(timer);rej(e);}});
 });}
 function setOverlay(txt){document.getElementById('overlay-txt').textContent=txt;}
-function switchTab(name,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('tab-'+name).classList.add('active');if(name==='map'){setTimeout(()=>{buildProjMap();if(_projMap)_projMap.invalidateSize();},50);}}
+function switchTab(name,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('tab-'+name).classList.add('active');if(name==='map'){setTimeout(()=>{buildProjMap();if(_projMap)_projMap.invalidateSize();},50);}
+if(name==='nur'){buildNUR();}}
 function fillSel(id,vals){const s=document.getElementById(id);if(!s)return;const cur=s.value;while(s.options.length>1)s.remove(1);[...new Set(vals)].filter(Boolean).sort().forEach(val=>{const o=document.createElement('option');o.value=val;o.textContent=val;if(val===cur)o.selected=true;s.appendChild(o);});}
 function metric(icon,lbl,val,sub,color){return `<div class="metric" style="--mc:${color}"><div class="micon"><i class="ti ${icon}"></i></div><div class="mlbl">${lbl}</div><div class="mval">${val}</div>${sub?`<div class="msub">${sub}</div>`:''}</div>`;}
 function metricWithBar(icon,lbl,val,sub,color,pct,barColor){
@@ -987,8 +1022,8 @@ function enterDashboard(){
   applyUserScope();
   _povCache={};
   buildProjFilters();
-  populatePOVFilters(); populateRPTFilters(); populatePMRFilters();
-  populatePEMRFilters(); populateVMRFilters(); populateHRCFilters();
+ populatePOVFilters(); populateRPTFilters(); populatePMRFilters();
+  populatePEMRFilters(); populateVMRFilters(); populateHRCFilters(); populateNURFilters();
   buildAll();
   applyTabVisibility();
   // PE users land on their PE Monthly Report (calendar + summary)
@@ -5584,6 +5619,210 @@ function buildProjMap(){
   if(bounds.length)_projMap.fitBounds(bounds,{padding:[40,40],maxZoom:12});
   if(legend)legend.innerHTML=Object.entries(MAP_STATUS_CFG).map(([k,c])=>`<span class="lg"><span class="sw" style="background:${c.color};${c.blink?'animation:pmrBlueBlink 1.2s infinite;':''}"></span>${c.label} (${counts[k]})</span>`).join('')+`<span class="lg" style="margin-left:auto;">${plotted} plotted · ${noGeo} without lat-long</span>`;
 }
+
+
+  // ── NOT UPDATED / NO ACTIVITY REPORT ───────────────────────────
+const NUR_MS_CFG={
+  city:    {col:'CITY',    all:'All Cities',    ph:'Search cities…'},
+  cluster: {col:'CLUSTER', all:'All Clusters',  ph:'Search clusters…'},
+  citymgr: {col:'CITYMGR', all:'All City Mgrs', ph:'Search city managers…'},
+  pe:      {col:'PE',      all:'All PEs',        ph:'Search PEs…'}
+};
+let _nurMS={city:new Set(),cluster:new Set(),citymgr:new Set(),pe:new Set()};
+let _nurMSAll={city:[],cluster:[],citymgr:[],pe:[]};
+let _nurMSCounts={city:{},cluster:{},citymgr:{},pe:{}};
+
+function populateNURFilters(){
+  const dInp=document.getElementById('nur-f-date');
+  if(dInp&&!dInp.value){
+    const y=new Date();y.setDate(y.getDate()-1);
+    dInp.value=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+  }
+  const r=D.lead.r;
+  const sets={city:new Set(),cluster:new Set(),citymgr:new Set(),pe:new Set()};
+  r.forEach(x=>{
+    if(!lv(x,LEAD_COL.PID))return;
+    const c=lv(x,LEAD_COL.CITY);if(c)sets.city.add(c);
+    const ch=lv(x,LEAD_COL.CLUSTER);if(ch)sets.cluster.add(ch);
+    const cm=lv(x,LEAD_COL.CITYMGR);if(cm)sets.citymgr.add(cm);
+    const pe=lv(x,LEAD_COL.PE);if(pe)sets.pe.add(pe);
+  });
+  Object.keys(sets).forEach(k=>{_nurMSAll[k]=[...sets[k]].sort((a,b)=>a.localeCompare(b));_nurMS[k]=new Set([..._nurMS[k]].filter(v=>sets[k].has(v)));});
+  Object.keys(NUR_MS_CFG).forEach(buildNURMSWidget);
+  recomputeNUROptions();
+}
+function buildNURMSWidget(key){
+  const host=document.getElementById('nur-ms-'+key);if(!host)return;const cfg=NUR_MS_CFG[key];
+  host.innerHTML=`
+    <div class="pov-ms-control" onclick="toggleNURMS('${key}')"><span class="pov-ms-text placeholder" id="nur-ms-text-${key}">${cfg.all}</span><i class="ti ti-chevron-down"></i></div>
+    <div class="pov-ms-panel">
+      <input type="text" class="pov-ms-search" id="nur-ms-search-${key}" placeholder="${cfg.ph}" oninput="renderNURMSOptions('${key}')" onclick="event.stopPropagation()"/>
+      <div class="pov-ms-actions"><button onclick="event.stopPropagation();selectAllNURMS('${key}')">Select all</button><button onclick="event.stopPropagation();clearNURMS('${key}')">Clear</button></div>
+      <div class="pov-ms-options" id="nur-ms-options-${key}"></div>
+    </div>`;
+  renderNURMSOptions(key);updateNURMSControl(key);
+}
+function renderNURMSOptions(key){
+  const box=document.getElementById('nur-ms-options-'+key);if(!box)return;
+  const q=((document.getElementById('nur-ms-search-'+key)||{}).value||'').trim().toLowerCase();
+  const opts=_nurMSAll[key].filter(o=>!q||o.toLowerCase().includes(q));
+  if(!opts.length){box.innerHTML='<div class="pov-ms-empty">No matches</div>';return;}
+  const counts=_nurMSCounts[key]||{};
+  const hl=(t)=>{if(!q)return t;const i=t.toLowerCase().indexOf(q);return i<0?t:t.slice(0,i)+'<mark>'+t.slice(i,i+q.length)+'</mark>'+t.slice(i+q.length);};
+  box.innerHTML=opts.map(o=>{const checked=_nurMS[key].has(o)?'checked':'';const safe=o.replace(/"/g,'&quot;').replace(/'/g,"\\'");const cnt=counts[o]||0;
+    return `<label class="pov-ms-opt" onclick="event.stopPropagation()"><input type="checkbox" ${checked} onchange="toggleNURMSOption('${key}','${safe}')"/><span class="lbl" title="${o.replace(/"/g,'&quot;')}">${hl(o)}</span><span class="pov-ms-cnt">${cnt}</span></label>`;}).join('');
+}
+function toggleNURMSOption(key,val){if(_nurMS[key].has(val))_nurMS[key].delete(val);else _nurMS[key].add(val);updateNURMSControl(key);recomputeNUROptions();buildNUR();}
+function nurRowPassesExcept(x,exceptKey){
+  if(!lv(x,LEAD_COL.PID))return false;
+  if(exceptKey!=='city'&&_nurMS.city.size&&!_nurMS.city.has(lv(x,LEAD_COL.CITY)))return false;
+  if(exceptKey!=='cluster'&&_nurMS.cluster.size&&!_nurMS.cluster.has(lv(x,LEAD_COL.CLUSTER)))return false;
+  if(exceptKey!=='citymgr'&&_nurMS.citymgr.size&&!_nurMS.citymgr.has(lv(x,LEAD_COL.CITYMGR)))return false;
+  if(exceptKey!=='pe'&&_nurMS.pe.size&&!_nurMS.pe.has(lv(x,LEAD_COL.PE)))return false;
+  return true;
+}
+function recomputeNUROptions(){
+  const r=D.lead.r;
+  Object.keys(NUR_MS_CFG).forEach(key=>{
+    const counts={};const colIdx=LEAD_COL[NUR_MS_CFG[key].col];
+    r.forEach(x=>{if(nurRowPassesExcept(x,key)){const val=lv(x,colIdx);if(val)counts[val]=(counts[val]||0)+1;}});
+    const set=new Set(Object.keys(counts));_nurMS[key].forEach(v=>set.add(v));
+    _nurMSAll[key]=[...set].sort((a,b)=>a.localeCompare(b));_nurMSCounts[key]=counts;renderNURMSOptions(key);
+  });
+}
+function selectAllNURMS(key){const q=((document.getElementById('nur-ms-search-'+key)||{}).value||'').trim().toLowerCase();_nurMSAll[key].filter(o=>!q||o.toLowerCase().includes(q)).forEach(o=>_nurMS[key].add(o));updateNURMSControl(key);recomputeNUROptions();buildNUR();}
+function clearNURMS(key){_nurMS[key].clear();updateNURMSControl(key);recomputeNUROptions();buildNUR();}
+function updateNURMSControl(key){const txt=document.getElementById('nur-ms-text-'+key);if(!txt)return;const sel=_nurMS[key];if(!sel.size){txt.textContent=NUR_MS_CFG[key].all;txt.classList.add('placeholder');}else if(sel.size===1){txt.textContent=[...sel][0];txt.classList.remove('placeholder');}else{txt.textContent=`${sel.size} selected`;txt.classList.remove('placeholder');}}
+function toggleNURMS(key){const host=document.getElementById('nur-ms-'+key);if(!host)return;const wasOpen=host.classList.contains('open');document.querySelectorAll('.pov-ms.open').forEach(el=>el.classList.remove('open'));if(!wasOpen){host.classList.add('open');const s=document.getElementById('nur-ms-search-'+key);if(s){s.value='';renderNURMSOptions(key);setTimeout(()=>s.focus(),0);}}}
+document.addEventListener('click',e=>{if(!e.target.closest('.nur-ms'))document.querySelectorAll('.nur-ms.open').forEach(el=>el.classList.remove('open'));});
+function clearNURFilters(){
+  Object.keys(_nurMS).forEach(k=>{_nurMS[k].clear();updateNURMSControl(k);});
+  const y=new Date();y.setDate(y.getDate()-1);
+  const dInp=document.getElementById('nur-f-date');
+  if(dInp)dInp.value=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+  recomputeNUROptions();
+  buildNUR();
+}
+
+let _nurRows=[];
+
+function buildNUR(){
+  const dateVal=(document.getElementById('nur-f-date')||{}).value||'';
+  const head=document.getElementById('nur-head'),body=document.getElementById('nur-body');
+  const clHead=document.getElementById('nur-cl-head'),clBody=document.getElementById('nur-cl-body');
+  if(!head||!body)return;
+  if(!dateVal){head.innerHTML='';body.innerHTML='<tr><td class="empty">Select a date</td></tr>';document.getElementById('nur-metrics').innerHTML='';if(clBody)clBody.innerHTML='';return;}
+  const [yy,mm,dd]=dateVal.split('-').map(Number);
+  const dateLabel=new Date(yy,mm-1,dd).toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'short',year:'numeric'});
+
+  const attByPID={};
+  D.att.r.forEach(x=>{
+    const d=parseDate(v(x,ATT_COL.DATE));
+    if(!d||d.getFullYear()!==yy||d.getMonth()!==mm-1||d.getDate()!==dd)return;
+    const pid=v(x,ATT_COL.PID);if(!pid)return;
+    (attByPID[pid]=attByPID[pid]||[]).push(x);
+  });
+  const pr=m=>({'onsite visit':4,'without visit update':3,'no activity':2})[m]||(m?1:0);
+
+  const rows=D.lead.r.filter(x=>{
+    if(!lv(x,LEAD_COL.PID))return false;
+    if(!nurRowPassesExcept(x,null))return false;
+    if(!lv(x,LEAD_COL.PE))return false;
+    const h=povHoldInfo(x);
+    if(h.onHold||h.cancelled)return false;
+    const m=computeProjectMetrics(lv(x,LEAD_COL.PID));
+    if(m.status==='done')return false;
+    return true;
+  }).map(x=>{
+    const pid=lv(x,LEAD_COL.PID);
+    const arows=attByPID[pid];
+    let statusKey='',remark='';
+    if(!arows||!arows.length){statusKey='notupdated';}
+    else{
+      let chosen=null,mNorm='';
+      arows.forEach(r=>{const mm=v(r,ATT_COL.M).toLowerCase();if(!chosen||pr(mm)>pr(mNorm)){chosen=r;mNorm=mm;}});
+      if(mNorm==='no activity'){statusKey='noactivity';remark=v(chosen,ATT_COL.REMARK);}
+      else return null;
+    }
+    const m=computeProjectMetrics(pid);
+    return{pid,name:lv(x,LEAD_COL.PNAME)||pid,city:lv(x,LEAD_COL.CITY)||'—',
+      cluster:lv(x,LEAD_COL.CLUSTER)||'—',citymgr:lv(x,LEAD_COL.CITYMGR)||'—',
+      pe:lv(x,LEAD_COL.PE)||'',statusKey,remark,
+      lastAtt:m.lastAttDate,finalStage:m.finalStage||'—'};
+  }).filter(Boolean);
+
+  _nurRows=rows;
+
+  const noActCnt=rows.filter(r=>r.statusKey==='noactivity').length;
+  const notUpdCnt=rows.filter(r=>r.statusKey==='notupdated').length;
+  document.getElementById('nur-metrics').innerHTML=
+    metric('ti-calendar','Date',dateLabel,'','#4f8ef7')+
+    metric('ti-building-skyscraper','Total Flagged',rows.length,'Not Updated + No Activity','#e74c3c')+
+    metric('ti-alert-triangle','No Activity',noActCnt,'Marked, no work','#f5a623')+
+    metric('ti-calendar-x','Not Updated',notUpdCnt,'No attendance entry','#e74c3c');
+
+  head.innerHTML='<tr><th>#</th><th>Project ID</th><th>Project Name</th><th>City</th><th>Cluster Head</th><th>City Manager</th><th>PE</th><th>Last Updated On</th><th>Status</th><th>Remarks</th><th>Aging</th><th>Last Workflow Status (DPR)</th></tr>';
+  if(!rows.length){body.innerHTML='<tr><td colspan="12" class="empty">No projects flagged for this date</td></tr>';}
+  else{
+    const today=new Date(yy,mm-1,dd);today.setHours(0,0,0,0);
+    body.innerHTML=rows.sort((a,b)=>a.city.localeCompare(b.city)||a.name.localeCompare(b.name)).map((r,i)=>{
+      const aging=r.lastAtt?Math.floor((today-new Date(r.lastAtt.getFullYear(),r.lastAtt.getMonth(),r.lastAtt.getDate()))/86400000)+'d':'Never';
+      const statusBadge=r.statusKey==='noactivity'?'<span class="badge bo">No Activity</span>':'<span class="badge br">Not Updated</span>';
+      const escId=r.pid.replace(/'/g,"\\'"),escName=r.name.replace(/'/g,"\\'");
+      return `<tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td><span class="badge bp">${r.pid}</span></td>
+        <td style="font-weight:500;cursor:pointer;color:#4f8ef7;" onclick="openProjectSummaryFor('${escId}','${escName}')">${r.name}</td>
+        <td style="font-size:12px;">${r.city}</td>
+        <td style="font-size:12px;">${r.cluster}</td>
+        <td style="font-size:12px;">${r.citymgr}</td>
+        <td style="font-size:12px;">${r.pe||'<span style="color:#e74c3c;">Not Assigned</span>'}</td>
+        <td style="font-size:11px;white-space:nowrap;">${r.lastAtt?fmtDate(r.lastAtt):'—'}</td>
+        <td>${statusBadge}</td>
+        <td style="font-size:11px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;">${r.remark||'—'}</td>
+        <td style="font-size:12px;font-weight:600;color:${aging==='Never'?'#8b92b0':'#e74c3c'};">${aging}</td>
+        <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;" title="${String(r.finalStage).replace(/"/g,'&quot;')}">${r.finalStage}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  const clMap={};
+  rows.forEach(r=>{const c=r.cluster||'(No Cluster Head)';if(!clMap[c])clMap[c]={noactivity:0,notupdated:0};clMap[c][r.statusKey]++;});
+  if(clHead)clHead.innerHTML='<tr><th>#</th><th>Cluster Head</th><th style="text-align:right;">No Activity</th><th style="text-align:right;">Not Updated</th><th style="text-align:right;">Total</th></tr>';
+  const clEntries=Object.entries(clMap).sort((a,b)=>(b[1].noactivity+b[1].notupdated)-(a[1].noactivity+a[1].notupdated));
+  if(clBody){
+    if(!clEntries.length)clBody.innerHTML='<tr><td colspan="5" class="empty">No data</td></tr>';
+    else clBody.innerHTML=clEntries.map(([c,cnt],i)=>`<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="font-weight:500;">${c}</td>
+      <td style="text-align:right;"><span class="badge bo">${cnt.noactivity}</span></td>
+      <td style="text-align:right;"><span class="badge br">${cnt.notupdated}</span></td>
+      <td style="text-align:right;font-weight:700;">${cnt.noactivity+cnt.notupdated}</td>
+    </tr>`).join('')+`<tr style="border-top:2px solid var(--border2);"><td></td><td style="font-weight:700;">Total</td><td style="text-align:right;font-weight:700;color:#f5a623;">${noActCnt}</td><td style="text-align:right;font-weight:700;color:#e74c3c;">${notUpdCnt}</td><td style="text-align:right;font-weight:700;">${rows.length}</td></tr>`;
+  }
+}
+
+function downloadNURCSV(){
+  if(!_nurRows.length){alert('No data to download');return;}
+  const dateVal=(document.getElementById('nur-f-date')||{}).value||'';
+  const esc=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const header=['Project ID','Project Name','City','Cluster Head','City Manager','PE','Last Updated On','Status','Remarks','Aging','Last Workflow Status (DPR)'];
+  const [yy,mm,dd]=dateVal.split('-').map(Number);
+  const today=new Date(yy,mm-1,dd);today.setHours(0,0,0,0);
+  const lines=[header.map(esc).join(',')];
+  _nurRows.forEach(r=>{
+    const aging=r.lastAtt?Math.floor((today-new Date(r.lastAtt.getFullYear(),r.lastAtt.getMonth(),r.lastAtt.getDate()))/86400000)+'d':'Never';
+    lines.push([r.pid,r.name,r.city,r.cluster,r.citymgr,r.pe||'Not Assigned',r.lastAtt?fmtDate(r.lastAtt):'—',r.statusKey==='noactivity'?'No Activity':'Not Updated',r.remark||'',aging,r.finalStage].map(esc).join(','));
+  });
+  const blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`not-updated-report-${dateVal||'export'}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+  
 loadAll();
 
   
