@@ -402,6 +402,11 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
         <div class="card-title"><i class="ti ti-clock-exclamation"></i> Project Delay Aging Report</div>
         <div id="pov-delay-aging"></div>
       </div>
+
+  <div class="card">
+        <div class="card-title"><i class="ti ti-stack-2"></i> Project Stage Status</div>
+        <div id="pov-stage-status"></div>
+      </div>
     </div>
 
     <div class="card">
@@ -1682,7 +1687,8 @@ function clearDPRLogFilter(){
   renderProjDPRLog();
 }
 // ── PROJECT OVERVIEW ──────────────────────────────────────────
-const LEAD_COL={TOTAL:0,PID:1,CITY:2,PNAME:3,SIZE:5,EPC:20,CLUSTER:30,CITYMGR:32,PE:34,HOLDST:38,HOLDREM:39,HOLDLOG:40};
+const LEAD_COL={TOTAL:0,PID:1,CITY:2,PNAME:3,SIZE:5,EPC:20,CLUSTER:30,CITYMGR:32,PE:34,HOLDST:38,HOLDREM:39,HOLDLOG:40,VENDORDATE:27};
+function vendorFinalizeDate(x){return parseDate(lv(x,LEAD_COL.VENDORDATE));}
 
 // Optional workplans — excluded from project completion
 const OPTIONAL_WORKPLANS=['solaredgelayoutcreation','handrailinstallationwork','modulecleaningsysteminstallation','internetprovidedbyclient'];
@@ -1803,12 +1809,13 @@ function clearPOVDelayBucket(){_povDelayBucket='';buildPOV();}
 function lv(row,i){return (i>=0 && row[i]!=null)?String(row[i]).trim():'';}
 function povNum(s){if(!s)return 0;const n=parseFloat(String(s).replace(/[^0-9.\-]/g,''));return isNaN(n)?0:n;}
 
-const POV_STATUSES=['Not Assigned','Installation On Going','Installation Completed But O&M pending','Project Closed','On Hold','Cancelled'];
+const POV_STATUSES=['Not Assigned','Vendor Not Finalized','Installation On Going','Installation Completed But O&M pending','Project Closed','On Hold','Cancelled'];
 const AGING_LABELS=['Today updated','Yesterday updated','3–5 days','5–7 days','7–10 days','10–15 days','15–20 days','20–30 days','30+ days','Never updated'];
 function povAgingOf(x){
   const h=povHoldInfo(x);
   if(h.onHold||h.cancelled)return '';
   if(!lv(x,LEAD_COL.PE))return '';
+  if(!vendorFinalizeDate(x))return '';
   const m=computeProjectMetrics(lv(x,LEAD_COL.PID));
   if(m.status==='done')return '';
   if(!m.lastAttDate)return 'Never updated';
@@ -1850,8 +1857,9 @@ function povProjectStatuses(x){
   const h=povHoldInfo(x);
   if(h.cancelled)return['Cancelled'];
   if(h.onHold)return['On Hold'];
+  if(!lv(x,LEAD_COL.PE))return['Not Assigned'];
+  if(!vendorFinalizeDate(x))return['Vendor Not Finalized'];
   const tags=[];
-  if(!lv(x,LEAD_COL.PE))tags.push('Not Assigned');
   const m=computeProjectMetrics(lv(x,LEAD_COL.PID));
   if(m.status==='done')tags.push('Project Closed');
   else if(m.installStatus==='done')tags.push('Installation Completed But O&M pending');
@@ -2257,10 +2265,12 @@ document.getElementById('pov-delay-report').innerHTML=povDelayReport(updCounts,t
     if(m.installStatus==='done')installBadge='<span class="badge bg">✓ Completed</span>';
     else if(m.installStatus==='wip')installBadge=`<span class="badge bo">⟳ On Going</span>${m.finalStage&&m.finalStage!=='—'?`<div style="font-size:11px;color:var(--muted);margin-top:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.finalStage.replace(/"/g,'&quot;')}">${m.finalStage}</div>`:''}`;
     else installBadge='<span class="badge bgr">— Pending</span>';
-    let projBadge;
+let projBadge;
     const _hi=povHoldInfo(x);
     if(_hi.cancelled)projBadge=`<span class="badge" style="background:rgba(224,81,138,0.15);color:#e0518a;border:1px solid rgba(224,81,138,0.3);">✕ Cancelled</span>${_hi.cancelDate?`<div style="font-size:10px;color:var(--muted);margin-top:2px;">${fmtDate(_hi.cancelDate)}</div>`:''}`;
     else if(_hi.onHold)projBadge=`<span class="badge bp">⏸ On Hold</span><div style="font-size:10px;color:var(--muted);margin-top:2px;">since ${_hi.holdSince?fmtDate(_hi.holdSince):'—'}</div>`;
+    else if(!peVal)projBadge='<span class="badge br">— Not Assigned</span>';
+    else if(!vendorFinalizeDate(x))projBadge='<span class="badge bgr" style="background:rgba(139,146,176,0.15);color:#8b92b0;border:1px solid rgba(139,146,176,0.3);">⏳ Vendor Not Finalized</span>';
     else if(m.status==='done')projBadge='<span class="badge bg">✓ Completed</span>';
     else if(m.status==='wip')projBadge=`<span class="badge bo">⟳ On Going</span><div style="font-size:10px;color:var(--muted);margin-top:2px;">${m.weightedPct}%</div>`;
     else projBadge='<span class="badge bgr">— Pending</span>';
@@ -2739,7 +2749,7 @@ function pmrShowDateSummary(dk){
   const dateLabel=new Date(y,m-1,d).toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'short',year:'numeric'});
   const pids=ctx.projIds||[];
   const pr=mm=>({'onsite visit':4,'without visit update':3,'no activity':2})[mm]||(mm?1:0);
-  let completed=0,hold=0,cancel=0,notAssigned=0,updated=0,pending=0;
+let completed=0,hold=0,cancel=0,notAssigned=0,vendorNotFinal=0,updated=0,pending=0;
   let onsiteC=0,onsiteP=0,withoutC=0,withoutP=0,noActivity=0,other=0;
   pids.forEach(pid=>{
     const row=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
@@ -2751,6 +2761,7 @@ function pmrShowDateSummary(dk){
     const met=computeProjectMetrics(pid);
     if(met.status==='done'){completed++;return;}
     if(row&&!lv(row,LEAD_COL.PE)){notAssigned++;return;}
+    if(row&&!vendorFinalizeDate(row)){vendorNotFinal++;return;}
     const rows=ctx.attByPD[pid+'|'+dk];
     if(!rows||!rows.length){pending++;return;}
     updated++;
@@ -2761,8 +2772,8 @@ function pmrShowDateSummary(dk){
     else if(mNorm==='without visit update'){complete?withoutC++:withoutP++;}
     else other++;
   });
-  const total=pids.length;
-  const toUpdate=updated+pending+notAssigned;
+const total=pids.length;
+  const toUpdate=updated+pending;
   const cards=
     metric('ti-building-skyscraper','Total Projects',total,'In current view','#4f8ef7')+
     metric('ti-circle-check','Project Completed',completed,'No update needed','#0d9488')+
@@ -2771,6 +2782,7 @@ function pmrShowDateSummary(dk){
     metricWithBar('ti-list-check','To Be Updated',toUpdate,`${total?Math.round(toUpdate/total*100):0}% of projects`,'#f5a623',total?toUpdate/total*100:0,'#f5a623');
   const subCards=
     metric('ti-user-off','Not Assigned',notAssigned,'No PE assigned','#8b92b0')+
+    metric('ti-file-off','Vendor Not Finalized',vendorNotFinal,'No finalize date (col AB)','#8b92b0')+
     metricWithBar('ti-calendar-check','Updated',updated,`${toUpdate?Math.round(updated/toUpdate*100):0}% of to-be-updated`,'#34c98a',toUpdate?updated/toUpdate*100:0,'#34c98a')+
     metricWithBar('ti-calendar-x','Pending',pending,`${toUpdate?Math.round(pending/toUpdate*100):0}% of to-be-updated`,'#e74c3c',toUpdate?pending/toUpdate*100:0,'#e74c3c');
   const chip=(label,val,color)=>`<span style="display:inline-flex;align-items:center;gap:6px;background:${color}18;color:${color};border:1px solid ${color}44;border-radius:16px;padding:5px 12px;font-size:12px;font-weight:600;margin:0 8px 8px 0;">${label}: ${val}</span>`;
@@ -2924,16 +2936,25 @@ if(fPE.size&&!fPE.has(lv(x,LEAD_COL.PE)))return false;
     });
     
    // Project completion marker: latest attendance date if project fully done
+// Project completion marker: latest attendance date if project fully done
     const _pm=computeProjectMetrics(pid);
     let _closedMs=null;
     if(_pm.status==='done'&&_pm.lastAttDate){const cd=_pm.lastAttDate;_closedMs=new Date(cd.getFullYear(),cd.getMonth(),cd.getDate()).getTime();}
-    
+    const _vDate=vendorFinalizeDate(x);
+    const _vMs=_vDate?new Date(_vDate.getFullYear(),_vDate.getMonth(),_vDate.getDate()).getTime():null;
   const _hInfo=povHoldInfo(x);
+    
     const _dayInHold=(d)=>{if(!_hInfo.holdIntervals.length)return null;const t0=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();for(const iv of _hInfo.holdIntervals){if(!iv.start)continue;const s=new Date(iv.start.getFullYear(),iv.start.getMonth(),iv.start.getDate()).getTime();const e=iv.end?new Date(iv.end.getFullYear(),iv.end.getMonth(),iv.end.getDate()).getTime():today.getTime();if(t0>=s&&t0<=e)return iv;}return null;};
     
-    const cells=days.map(d=>{
+const cells=days.map(d=>{
       const k=pid+'|'+pmrKey(d);
       const dMs=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+      if(_vMs===null){
+        return `<td><div class="pmr-cell pmr-grey" title="Vendor not finalized">—</div></td>`;
+      }
+      if(dMs<_vMs){
+        return `<td><div class="pmr-cell pmr-grey">—</div></td>`;
+      }
       if(_closedMs!==null&&dMs===_closedMs){
         return `<td><div class="pmr-cell pmr-closed" onclick="pmrShowDay('${pid.replace(/'/g,"\\'")}','${pmrKey(d)}')" style="cursor:pointer;">Project Closed</div></td>`;
       }
@@ -4639,6 +4660,7 @@ function povRenderExtraReports(){
   povRenderInstMatrix(rows);
   povRenderProjMatrix(rows);
   povRenderDelayAging(rows);
+  povRenderStageStatus(rows);
   povRenderTopPE(rows);
   povRenderTopCity(rows);
 povRenderPhaseTAT(rows);
@@ -4913,6 +4935,73 @@ function povComputeDelay(x){
   const projTat=Math.ceil((endRef-poStart)/86400000)+1;
   const delayBy=projTat-poDays;
   return{delayBy,projTat,poDays,m,poStart,isDone:m.status==='done'};
+}
+
+
+  const STAGE_STATUS_ORDER=['Not Assigned','Vendor Not Finalized','Installation On Going','Installation Completed But O&M pending','Project Closed','On Hold','Cancelled'];
+const STAGE_STATUS_COLORS={
+  'Not Assigned':'#e74c3c','Vendor Not Finalized':'#8b92b0','Installation On Going':'#f5a623',
+  'Installation Completed But O&M pending':'#3bc0d8','Project Closed':'#0d9488','On Hold':'#9b6dff','Cancelled':'#e0518a'
+};
+const STAGE_STATUS_ICONS={
+  'Not Assigned':'ti-user-off','Vendor Not Finalized':'ti-file-off','Installation On Going':'ti-loader',
+  'Installation Completed But O&M pending':'ti-transfer','Project Closed':'ti-circle-check','On Hold':'ti-player-pause','Cancelled':'ti-ban'
+};
+function povRenderStageStatus(rows){
+  const host=document.getElementById('pov-stage-status');if(!host)return;
+  const total=rows.length;
+  if(!total){host.innerHTML='<div class="empty">No data</div>';return;}
+  const counts={};STAGE_STATUS_ORDER.forEach(s=>counts[s]=0);
+  window._povStageRows={};STAGE_STATUS_ORDER.forEach(s=>window._povStageRows[s]=[]);
+  rows.forEach(x=>{
+    const tags=povProjectStatuses(x);
+    const st=tags[0];
+    if(counts[st]===undefined){counts[st]=0;window._povStageRows[st]=[];}
+    counts[st]++;
+    window._povStageRows[st].push(x);
+  });
+  const rowsHtml=STAGE_STATUS_ORDER.filter(s=>counts[s]>0).map(s=>{
+    const n=counts[s],pct=Math.round(n/total*100),color=STAGE_STATUS_COLORS[s]||'#8b92b0',icon=STAGE_STATUS_ICONS[s]||'ti-circle';
+    return `<tr onclick="povShowStageDetail('${s.replace(/'/g,"\\'")}')" style="cursor:pointer;">
+      <td style="width:1%;padding:6px 4px;"><i class="ti ${icon}" style="color:${color};font-size:15px;"></i></td>
+      <td style="font-size:12px;padding:6px 4px;">${s}</td>
+      <td style="text-align:right;font-size:13px;font-weight:600;color:${color};white-space:nowrap;padding:6px 4px;">${n}</td>
+      <td style="text-align:right;font-size:11px;color:var(--muted);white-space:nowrap;padding:6px 4px;">${pct}%</td>
+      <td style="min-width:110px;padding:6px 4px;"><div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:${color};border-radius:3px;"></div></div></td>
+    </tr>`;
+  }).join('');
+  host.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">${total} project(s) in current view. Click a row for project list.</div><table style="font-size:12px;width:100%;"><tbody>${rowsHtml}</tbody></table>`;
+}
+function povShowStageDetail(stage){
+  const items=(window._povStageRows||{})[stage]||[];
+  if(!items.length)return;
+  const color=STAGE_STATUS_COLORS[stage]||'#8b92b0';
+  const cards=items.map(x=>{
+    const pid=lv(x,LEAD_COL.PID),name=lv(x,LEAD_COL.PNAME)||pid;
+    const pe=lv(x,LEAD_COL.PE)||'<span style="color:#e74c3c;">Not Assigned</span>';
+    const city=lv(x,LEAD_COL.CITY)||'—';
+    const escId=pid.replace(/'/g,"\\'"),escName=name.replace(/'/g,"\\'");
+    return `<div class="pemr-card" style="border-left:3px solid ${color};">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+        <span onclick="openProjectSummaryFor('${escId}','${escName}')" style="font-weight:600;font-size:13px;cursor:pointer;color:#4f8ef7;text-decoration:underline;text-underline-offset:2px;">${pemrEsc(name)}</span>
+        <span style="font-size:10px;color:var(--muted);">${pemrEsc(pid)}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">
+        <div><span style="color:var(--muted);">City:</span> <b>${pemrEsc(city)}</b></div>
+        <div><span style="color:var(--muted);">PE:</span> ${pe}</div>
+      </div>
+    </div>`;
+  }).join('');
+  let ov=document.getElementById('pemr-modal-ov');
+  if(!ov){ov=document.createElement('div');ov.id='pemr-modal-ov';ov.className='pmr-modal-ov';ov.onclick=(e)=>{if(e.target===ov)pemrCloseDay();};document.body.appendChild(ov);}
+  ov.innerHTML=`<div class="pmr-modal" style="max-width:720px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+      <div><div style="font-size:15px;font-weight:600;">${pemrEsc(stage)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${items.length} project(s)</div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div style="overflow:auto;display:flex;flex-direction:column;gap:10px;">${cards}</div>
+  </div>`;
+  ov.style.display='flex';
 }
 
 function povRenderDelayAging(rows){
@@ -5724,10 +5813,11 @@ function buildNUR(){
   });
   const pr=m=>({'onsite visit':4,'without visit update':3,'no activity':2})[m]||(m?1:0);
 
-  const rows=D.lead.r.filter(x=>{
+const rows=D.lead.r.filter(x=>{
     if(!lv(x,LEAD_COL.PID))return false;
     if(!nurRowPassesExcept(x,null))return false;
     if(!lv(x,LEAD_COL.PE))return false;
+    if(!vendorFinalizeDate(x))return false;
     const h=povHoldInfo(x);
     if(h.onHold||h.cancelled)return false;
     const m=computeProjectMetrics(lv(x,LEAD_COL.PID));
