@@ -3085,6 +3085,20 @@ function pemrProjectCard(ctx,pid,dk){
   const nm=ctx.projName[pid]||pid;
   const rows=ctx.attByPD[pid+'|'+dk];
   const head=(badge)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-weight:600;font-size:13px;color:var(--text);">${pemrEsc(nm)}</span><span style="font-size:10px;color:var(--muted);">${pemrEsc(pid)}</span><span style="margin-left:auto;">${badge}</span></div>`;
+  const _leadRow=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
+  if(_leadRow){
+    const _hi=povHoldInfo(_leadRow);
+    const _popupMs=new Date(y,m-1,d).getTime();
+    const _dayInHold=(()=>{if(!_hi.holdIntervals.length)return null;for(const iv of _hi.holdIntervals){if(!iv.start)continue;const s=new Date(iv.start.getFullYear(),iv.start.getMonth(),iv.start.getDate()).getTime();const e=iv.end?new Date(iv.end.getFullYear(),iv.end.getMonth(),iv.end.getDate()).getTime():new Date().setHours(0,0,0,0);if(_popupMs>=s&&_popupMs<=e)return iv;}return null;})();
+    if(_hi.cancelled&&_hi.cancelDate&&_popupMs>=new Date(_hi.cancelDate.getFullYear(),_hi.cancelDate.getMonth(),_hi.cancelDate.getDate()).getTime()){
+      const rem=_hi.cancelRemark?`<div style="font-size:11px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;margin-top:4px;white-space:pre-wrap;">📝 ${pemrEsc(_hi.cancelRemark)}</div>`:'';
+      return `<div class="pemr-card" style="border-left:3px solid #e0518a;">${head('<span class="badge" style="background:rgba(224,81,138,0.15);color:#e0518a;border:1px solid rgba(224,81,138,0.3);">✕ Cancelled</span>')}${rem}</div>`;
+    }
+    if(_dayInHold){
+      const rem=_dayInHold.remark?`<div style="font-size:11px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;margin-top:4px;white-space:pre-wrap;">📝 ${pemrEsc(_dayInHold.remark)}</div>`:'';
+      return `<div class="pemr-card" style="border-left:3px solid #9b6dff;">${head('<span class="badge bp">⏸ On Hold</span>')}${rem}</div>`;
+    }
+  }
   if(!rows||!rows.length){
     const dates=ctx.projDates[pid]||[];
     const popupMs=new Date(y,m-1,d).getTime();
@@ -3160,21 +3174,46 @@ function pemrShowDay(peName,dk){
   const ctx=_pemrCtx;if(!ctx||!ctx.attByPD)return;
   const pids=ctx.peProjects[peName]||[];
   const [y,m,d]=dk.split('-').map(Number);
+  const popupMs=new Date(y,m-1,d).getTime();
   const dateLabel=new Date(y,m-1,d).toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+
+  let completedN=0,holdN=0,cancelN=0,vendorNotFinalN=0,marked=0,notMarked=0;
+  const toBeUpdatePids=[];
+  pids.forEach(pid=>{
+    const row=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
+    if(row){
+      const h=povHoldInfo(row);
+      if(h.cancelled&&h.cancelDate&&popupMs>=new Date(h.cancelDate.getFullYear(),h.cancelDate.getMonth(),h.cancelDate.getDate()).getTime()){cancelN++;return;}
+      const dayInHold=h.holdIntervals.some(iv=>{if(!iv.start)return false;const s=new Date(iv.start.getFullYear(),iv.start.getMonth(),iv.start.getDate()).getTime();const e=iv.end?new Date(iv.end.getFullYear(),iv.end.getMonth(),iv.end.getDate()).getTime():new Date().setHours(0,0,0,0);return popupMs>=s&&popupMs<=e;});
+      if(dayInHold){holdN++;return;}
+    }
+    const met=computeProjectMetrics(pid);
+    if(met.status==='done'){completedN++;return;}
+    if(row&&!vendorFinalizeDate(row)){vendorNotFinalN++;return;}
+    toBeUpdatePids.push(pid);
+    const r=ctx.attByPD[pid+'|'+dk];
+    if(r&&r.length)marked++;else notMarked++;
+  });
+
   const sortedPids=[...pids].sort((a,b)=>{
     const ha=(ctx.attByPD[a+'|'+dk]&&ctx.attByPD[a+'|'+dk].length)?0:1;
     const hb=(ctx.attByPD[b+'|'+dk]&&ctx.attByPD[b+'|'+dk].length)?0:1;
     if(ha!==hb)return ha-hb;
     return (ctx.projName[a]||a).localeCompare(ctx.projName[b]||b);
   });
-  const marked=sortedPids.filter(pid=>{const r=ctx.attByPD[pid+'|'+dk];return r&&r.length;}).length;
   const cards=sortedPids.map(pid=>pemrProjectCard(ctx,pid,dk)).join('');
 
   const onLeave=!!(ctx.leavesByPE&&ctx.leavesByPE[peName]&&ctx.leavesByPE[peName].has(dk));
-  const summary=`<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin-bottom:12px;align-items:center;">
+  const toBeUpdate=toBeUpdatePids.length;
+  const summary=`<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-bottom:12px;align-items:center;">
     <span>Total Projects: <b style="color:var(--text);">${pids.length}</b></span>
+    <span>To Be Updated: <b style="color:#f5a623;">${toBeUpdate}</b></span>
     <span>Activity updated: <b style="color:#34c98a;">${marked}</b></span>
-    <span>Not marked: <b style="color:#e74c3c;">${pids.length-marked}</b></span>
+    <span>Not marked: <b style="color:#e74c3c;">${notMarked}</b></span>
+    <span>Completed: <b style="color:#0d9488;">${completedN}</b></span>
+    <span>On Hold: <b style="color:#9b6dff;">${holdN}</b></span>
+    <span>Cancelled: <b style="color:#e0518a;">${cancelN}</b></span>
+    <span>Vendor Not Finalized: <b style="color:#8b92b0;">${vendorNotFinalN}</b></span>
     ${onLeave?`<span class="badge bb" style="margin-left:auto;">🏖 ${ctx.leavesByPE[peName].get(dk)||'Leave'}</span>`:''}
   </div>`;
 
@@ -3312,16 +3351,27 @@ function pemrShowDateSummary(dk){
   const dateLabel=new Date(y,m-1,d).toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'short',year:'numeric'});
   const pes=ctx.peNames||[];
   const pr=mm=>({'onsite visit':4,'without visit update':3,'no activity':2})[mm]||(mm?1:0);
-
   const peStats={};
   let gTotal=0,gUpd=0,gPend=0,gOn=0,gWo=0,gNa=0,gOnLeave=0;
+  let gCompleted=0,gHold=0,gCancel=0,gVendorNotFinal=0;
+  const popupMs=new Date(y,m-1,d).getTime();
   pes.forEach(pe=>{
     const pids=ctx.peProjects[pe]||[];
     const onLeave=!!(ctx.leavesByPE&&ctx.leavesByPE[pe]&&ctx.leavesByPE[pe].has(dk));
     if(onLeave) gOnLeave++;
-    const st={total:pids.length,updated:0,pending:0,onsite:0,without:0,noact:0,onLeave,projects:[]};
+    const st={total:0,updated:0,pending:0,onsite:0,without:0,noact:0,onLeave,projects:[]};
     pids.forEach(pid=>{
-      gTotal++;
+      const row=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
+      if(row){
+        const h=povHoldInfo(row);
+        if(h.cancelled&&h.cancelDate&&popupMs>=new Date(h.cancelDate.getFullYear(),h.cancelDate.getMonth(),h.cancelDate.getDate()).getTime()){gCancel++;return;}
+        const dayInHold=h.holdIntervals.some(iv=>{if(!iv.start)return false;const s=new Date(iv.start.getFullYear(),iv.start.getMonth(),iv.start.getDate()).getTime();const e=iv.end?new Date(iv.end.getFullYear(),iv.end.getMonth(),iv.end.getDate()).getTime():new Date().setHours(0,0,0,0);return popupMs>=s&&popupMs<=e;});
+        if(dayInHold){gHold++;return;}
+      }
+      const met=computeProjectMetrics(pid);
+      if(met.status==='done'){gCompleted++;return;}
+      if(row&&!vendorFinalizeDate(row)){gVendorNotFinal++;return;}
+      st.total++;gTotal++;
       const arows=ctx.attByPD[pid+'|'+dk];
       const nm=ctx.projName[pid]||pid;
       if(!arows||!arows.length){ st.pending++; gPend++; st.projects.push({pid,name:nm,status:'pending'}); return; }
@@ -3350,12 +3400,16 @@ function pemrShowDateSummary(dk){
   const peActive=peUpd+pePend;
   const selCard=(key)=>_pemrDateCardF===key?'outline:2px solid var(--accent);':'';
   const cardBtn=(key,inner)=>`<div onclick="pemrDateSetCardF('${key}')" style="cursor:pointer;${selCard(key)}border-radius:16px;">${inner}</div>`;
-  const cards=
+const cards=
     metric('ti-users','Total PEs',pes.length,'In current view','#4f8ef7')+
     cardBtn('upd',metricWithBar('ti-user-check','PEs Updated',peUpd,`Full ${peFull} · Partial ${pePart} · ${peActive?Math.round(peUpd/peActive*100):0}%`,'#34c98a',peActive?peUpd/peActive*100:0,'#34c98a'))+
     cardBtn('leave',metric('ti-beach','On Leave',peLeave,'PEs','#3bc0d8'))+
     cardBtn('weekoff',metric('ti-calendar-off','Week-Off',peWO,'PEs','#9b6dff'))+
-    cardBtn('pending',metricWithBar('ti-user-x','Pending',pePend,`${peActive?Math.round(pePend/peActive*100):0}% of active PEs`,'#e74c3c',peActive?pePend/peActive*100:0,'#e74c3c'));
+    cardBtn('pending',metricWithBar('ti-user-x','Pending',pePend,`${peActive?Math.round(pePend/peActive*100):0}% of active PEs`,'#e74c3c',peActive?pePend/peActive*100:0,'#e74c3c'))+
+    metric('ti-circle-check','Completed',gCompleted,'Projects','#0d9488')+
+    metric('ti-player-pause','On Hold',gHold,'Projects','#9b6dff')+
+    metric('ti-ban','Cancelled',gCancel,'Projects','#e0518a')+
+    metric('ti-file-off','Vendor Not Finalized',gVendorNotFinal,'Projects','#8b92b0');
   const pesView=_pemrDateCardF?pes.filter(pe=>peCat[pe]===_pemrDateCardF):pes;
   const escq=s=>String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
   
