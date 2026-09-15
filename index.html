@@ -228,7 +228,7 @@ tr:hover td{background:var(--surface2);}
 
  @keyframes pmrBlueBlink{0%,100%{box-shadow:0 0 0 0 rgba(79,142,247,0.6);}50%{box-shadow:0 0 0 3px rgba(79,142,247,0.35);}}
 @keyframes pmrRowDelayBlink{0%,100%{background:rgba(231,76,60,0.05);}50%{background:rgba(231,76,60,0.18);}}
-tr.pmr-row-delay td{animation:pmrRowDelayBlink 1.6s ease-in-out infinite;}
+tr.pmr-row-delay td.pmr-c0,tr.pmr-row-delay td.pmr-c1,tr.pmr-row-delay td.pmr-c2,tr.pmr-row-delay td.pmr-c3{animation:pmrRowDelayBlink 2.3s ease-in-out infinite;}
 tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
   
 .pmr-install{animation:pmrBlueBlink 1.4s ease-in-out infinite;border:1px solid rgba(79,142,247,0.55) !important;position:relative;}
@@ -291,7 +291,8 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
     <button class="tab" onclick="switchTab('pmr',this)"><i class="ti ti-calendar-month"></i> Project wise Monthly report</button>
     <button class="tab" onclick="switchTab('pemr',this)"><i class="ti ti-user-check"></i> PE Monthly Report</button>
     <button class="tab" onclick="switchTab('vmr',this)"><i class="ti ti-building-store"></i> Vendor Monthly Report</button>
-    <button class="tab" onclick="switchTab('map',this)"><i class="ti ti-map-2"></i> Project Map</button>
+   <button class="tab" onclick="switchTab('map',this)"><i class="ti ti-map-2"></i> Project Map</button>
+    <button class="tab" onclick="switchTab('cmp',this)"><i class="ti ti-git-compare"></i> Count Compare</button>
   </div>
 
   <!-- PROJECT OVERVIEW TAB -->
@@ -690,7 +691,28 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
     </div>
   </div>
 
+  <!-- COUNT COMPARE TAB -->
+  <div id="tab-cmp" class="tab-content">
+    <div style="padding:20px 24px 0;">
+      <div class="section-title">Project Completed vs Project Closed — Reconciliation</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;">
+        <b style="color:#0d9488;">Project Completed</b> (Overview card) counts every project where all required workplan items are done.
+        <b style="color:#4f8ef7;">Project Closed</b> (Project Stage Status) counts the same, but only if the project also has a PE, a finalized vendor, and is not On Hold / Cancelled.
+        The projects below are <b>done but excluded</b> from "Project Closed" — that is the gap. Uses the same filters selected on the Project Overview tab.
+      </div>
+      <div class="metrics" id="cmp-metrics"></div>
+    </div>
+    <div style="padding:0 24px 20px;">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-git-compare"></i> Difference — Completed but not "Project Closed"</div>
+        <div class="table-wrap"><table><thead id="cmp-head"></thead><tbody id="cmp-body"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
   <!-- PROJECT SUMMARY TAB -->
+
+  
   <div id="tab-proj" class="tab-content">
     <div class="section-title">Project Summary</div>
     <div class="card">
@@ -840,7 +862,8 @@ function parseSheet(gid){return new Promise((res,rej)=>{
 });}
 function setOverlay(txt){document.getElementById('overlay-txt').textContent=txt;}
 function switchTab(name,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('tab-'+name).classList.add('active');if(name==='map'){setTimeout(()=>{buildProjMap();if(_projMap)_projMap.invalidateSize();},50);}
-if(name==='nur'){buildNUR();}}
+if(name==='nur'){buildNUR();}
+if(name==='cmp'){buildCMP();}}
 function fillSel(id,vals){const s=document.getElementById(id);if(!s)return;const cur=s.value;while(s.options.length>1)s.remove(1);[...new Set(vals)].filter(Boolean).sort().forEach(val=>{const o=document.createElement('option');o.value=val;o.textContent=val;if(val===cur)o.selected=true;s.appendChild(o);});}
 function metric(icon,lbl,val,sub,color){return `<div class="metric" style="--mc:${color}"><div class="micon"><i class="ti ${icon}"></i></div><div class="mlbl">${lbl}</div><div class="mval">${val}</div>${sub?`<div class="msub">${sub}</div>`:''}</div>`;}
 function metricWithBar(icon,lbl,val,sub,color,pct,barColor){
@@ -2571,7 +2594,7 @@ const pctOf=(n)=>G.count?Math.round(n/G.count*100):0;
 
 // ── PROJECT MONTHLY REPORT ────────────────────────────────────
 // Attendance fixed cols: A=UniqueID(0) B=Date(1) C=ProjName(2) D=ProjID(3) L=flag(11) M=visitStatus(12)
-const ATT_COL={UID:0,DATE:1,PNAME:2,PID:3,L:11,M:12,REMARK:13};
+const ATT_COL={UID:0,DATE:1,PNAME:2,PID:3,EMAIL:4,L:11,M:12,REMARK:13};
 // TBT fixed cols already: A=UID(0) I=Date(8) M=TBT Report(12) N=DPR Report(13)
 const PMR_TBT={UID:0,DATE:8,TBTREP:12,DPRREP:13};
 
@@ -2809,6 +2832,112 @@ const total=pids.length;
   </div>`;
   ov.style.display='flex';
 }
+
+let _pmrProjTab=1;
+let _pmrProjCurrent=null;
+function pmrProjSetTab(t){_pmrProjTab=t;if(_pmrProjCurrent)pmrShowProjectSummary(_pmrProjCurrent.pid,_pmrProjCurrent.pname);}
+
+function pmrShowProjectSummary(pid,pname){
+  const ctx=_pmrCtx;if(!ctx||!ctx.attByPD||!ctx.yy)return;
+  _pmrProjCurrent={pid,pname};
+  const yy=ctx.yy,mm=ctx.mm;
+  const daysInMonth=new Date(yy,mm,0).getDate();
+  const today=new Date();today.setHours(0,0,0,0);
+  const monthLabel=new Date(yy,mm-1,1).toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  const pr=mm2=>({'onsite visit':4,'without visit update':3,'no activity':2})[mm2]||(mm2?1:0);
+
+  const leadRow=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
+  const ownerName=leadRow?lv(leadRow,LEAD_COL.PE):'';
+  const peEmailIdx=ci(D.pe.h,'Mailid','email','mail');
+  let ownerEmail='';
+  if(ownerName&&peEmailIdx>=0){
+    const prow=D.pe.r.find(x=>v(x,1).trim().toLowerCase()===ownerName.trim().toLowerCase());
+    if(prow)ownerEmail=v(prow,peEmailIdx).toLowerCase().trim();
+  }
+
+  let notUpdated=0,onsite=0,without=0,noact=0,tbtCnt=0,dprCnt=0,consideredDays=0;
+  const peEmailIdx2=ci(D.pe.h,'Mailid','email','mail');
+  const emailToPEName={};
+  if(peEmailIdx2>=0)D.pe.r.forEach(x=>{const em=v(x,peEmailIdx2).toLowerCase().trim();if(em)emailToPEName[em]=v(x,1)||em;});
+  const peDayMap={}; // email -> {name, dates:[]}
+
+  for(let dd=1;dd<=daysInMonth;dd++){
+    const dateObj=new Date(yy,mm-1,dd);
+    if(dateObj>today)continue;
+    consideredDays++;
+    const dk=pmrKey(dateObj);
+    const rows=ctx.attByPD[pid+'|'+dk];
+    const t=ctx.tbtByPD[pid+'|'+dk];
+    if(t){if(t.tbt)tbtCnt++;if(t.dpr)dprCnt++;}
+
+    if(!rows||!rows.length){notUpdated++;continue;}
+    let chosen=null,mNorm='';
+    rows.forEach(r=>{const mv=v(r,ATT_COL.M).toLowerCase();if(!chosen||pr(mv)>pr(mNorm)){chosen=r;mNorm=mv;}});
+    if(mNorm==='onsite visit')onsite++;
+    else if(mNorm==='without visit update')without++;
+    else if(mNorm==='no activity')noact++;
+
+    const chosenEmail=(v(chosen,ATT_COL.EMAIL)||'').toLowerCase().trim();
+    if(chosenEmail){
+      const nm=emailToPEName[chosenEmail]||chosenEmail;
+      if(!peDayMap[chosenEmail])peDayMap[chosenEmail]={name:nm,dates:[],onsite:0,without:0,noact:0};
+      peDayMap[chosenEmail].dates.push(dateObj);
+      if(mNorm==='onsite visit')peDayMap[chosenEmail].onsite++;
+      else if(mNorm==='without visit update')peDayMap[chosenEmail].without++;
+      else if(mNorm==='no activity')peDayMap[chosenEmail].noact++;
+    }
+  }
+
+  const updatedDays=onsite+without+noact;
+
+  const cardsTab1=
+    metric('ti-calendar','Days Considered',consideredDays,monthLabel,'#4f8ef7')+
+    metricWithBar('ti-calendar-check','Updated',updatedDays,`${consideredDays?Math.round(updatedDays/consideredDays*100):0}%`,'#34c98a',consideredDays?updatedDays/consideredDays*100:0,'#34c98a')+
+    metricWithBar('ti-calendar-x','Not Updated',notUpdated,`${consideredDays?Math.round(notUpdated/consideredDays*100):0}%`,'#e74c3c',consideredDays?notUpdated/consideredDays*100:0,'#e74c3c')+
+    metric('ti-alert-triangle','No Activity',noact,'Days','#f5a623')+
+    metric('ti-clipboard-check','TBT Updated',tbtCnt,'Days','#34c98a')+
+    metric('ti-file-report','DPR Updated',dprCnt,'Days','#3bc0d8');
+
+  const peRows=Object.values(peDayMap).sort((a,b)=>b.dates.length-a.dates.length);
+  const peTableBody=peRows.map(p=>{
+    const sorted=[...p.dates].sort((a,b)=>a-b);
+    const from=fmtDate(sorted[0]),to=fmtDate(sorted[sorted.length-1]);
+    return `<tr>
+      <td style="font-weight:500;">${pemrEsc(p.name)}</td>
+      <td style="font-size:11px;white-space:nowrap;">${from}</td>
+      <td style="font-size:11px;white-space:nowrap;">${to}</td>
+      <td style="text-align:right;font-weight:600;color:#34c98a;">${p.dates.length}</td>
+      <td style="text-align:center;color:#34c98a;">${p.onsite||'—'}</td>
+      <td style="text-align:center;color:#3bc0d8;">${p.without||'—'}</td>
+      <td style="text-align:center;color:#f5a623;">${p.noact||'—'}</td>
+    </tr>`;
+  }).join('');
+  const cardsTab2=peRows.length
+    ? `<div class="table-wrap" style="grid-column:1/-1;"><table style="font-size:12px;width:100%;"><thead><tr><th>PE</th><th>From</th><th>To</th><th style="text-align:right;">Total Days</th><th style="text-align:center;">Onsite</th><th style="text-align:center;">Without Visit</th><th style="text-align:center;">No Activity</th></tr></thead><tbody>${peTableBody}</tbody></table></div>`
+    : '<div class="empty" style="grid-column:1/-1;">No attendance updates this month.</div>';
+
+  const tabBar=`<div style="display:flex;gap:6px;margin:10px 0;background:var(--bg2);border-radius:8px;padding:4px;width:fit-content;">
+    <button onclick="pmrProjSetTab(1)" style="font-size:12px;padding:6px 14px;border-radius:6px;border:none;background:${_pmrProjTab===1?'var(--accent)':'transparent'};color:${_pmrProjTab===1?'#fff':'var(--muted)'};cursor:pointer;font-weight:600;">Monthly Overview</button>
+    <button onclick="pmrProjSetTab(2)" style="font-size:12px;padding:6px 14px;border-radius:6px;border:none;background:${_pmrProjTab===2?'var(--accent)':'transparent'};color:${_pmrProjTab===2?'#fff':'var(--muted)'};cursor:pointer;font-weight:600;">Task &amp; Ownership</button>
+  </div>`;
+
+  const content=_pmrProjTab===2?cardsTab2:cardsTab1;
+  let ov=document.getElementById('pemr-modal-ov');
+  if(!ov){ov=document.createElement('div');ov.id='pemr-modal-ov';ov.className='pmr-modal-ov';ov.onclick=(e)=>{if(e.target===ov)pemrCloseDay();};document.body.appendChild(ov);}
+  ov.innerHTML=`<div class="pmr-modal" style="max-width:760px;max-height:88vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;">
+      <div><div style="font-size:15px;font-weight:600;color:var(--text);">${pemrEsc(pname)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${pemrEsc(pid)} · ${monthLabel}</div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    ${tabBar}
+    <div style="margin-top:8px;overflow:auto;" class="${_pmrProjTab===1?'metrics':''}">${content}</div>
+  </div>`;
+  ov.style.display='flex';
+}
+
+
+
+  
 function pmrShowRemark(rk){
   const data=_pmrRemarks[rk]||{remark:'No remark available',proj:'',date:'',title:'Remarks'};
   const esc=(s)=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -2886,7 +3015,7 @@ const Dp_CID=ci(D.dpr.h,'ChildID','child');
   });
   D.lead.r.forEach(x=>{const pid=lv(x,LEAD_COL.PID);if(pid)projName[pid]=lv(x,LEAD_COL.PNAME)||pid;});
   const projDates={};Object.keys(projDatesSet).forEach(p=>{projDates[p]=[...projDatesSet[p]].sort((a,b)=>a-b);});
-  _pmrCtx={attByPD:attIdx,tbtByPD:tbtIdx,dprByPD,projName,projDates,A_CI,A_CO,A_LOC};
+  _pmrCtx={attByPD:attIdx,tbtByPD:tbtIdx,dprByPD,projName,projDates,A_CI,A_CO,A_LOC,yy,mm};
 
   // Project rows from Lead Tracker (filtered)
 const projRows=D.lead.r.filter(x=>{
@@ -2898,8 +3027,16 @@ if(fPE.size&&!fPE.has(lv(x,LEAD_COL.PE)))return false;
     if(_pmrMS.status.size&&!povProjectStatuses(x).some(t=>_pmrMS.status.has(t)))return false;
     if(_pmrMS.pname.size&&!_pmrMS.pname.has(lv(x,LEAD_COL.PNAME)))return false;
     if(_pmrMS.pid.size&&!_pmrMS.pid.has(pid))return false;
+    // Hide projects completed before the selected month (still show in their completion month or earlier)
+    const _pmCheck=computeProjectMetrics(pid);
+    if(_pmCheck.status==='done'&&_pmCheck.lastAttDate){
+      const _cy=_pmCheck.lastAttDate.getFullYear(),_cm=_pmCheck.lastAttDate.getMonth();
+      if(yy>_cy||(yy===_cy&&mm-1>_cm))return false;
+    }
     return true;
   })
+
+  
     .sort((a,b)=>{const c=lv(a,LEAD_COL.CITY).localeCompare(lv(b,LEAD_COL.CITY));return c!==0?c:lv(a,LEAD_COL.PNAME).localeCompare(lv(b,LEAD_COL.PNAME));});
 
   // Header
@@ -2949,24 +3086,36 @@ if(fPE.size&&!fPE.has(lv(x,LEAD_COL.PE)))return false;
 const cells=days.map(d=>{
       const k=pid+'|'+pmrKey(d);
       const dMs=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
-      if(_vMs===null){
+
+  
+if(_vMs===null){
         return `<td><div class="pmr-cell pmr-grey" title="Vendor not finalized">—</div></td>`;
       }
       if(dMs<_vMs){
         return `<td><div class="pmr-cell pmr-grey">—</div></td>`;
       }
-      if(_closedMs!==null&&dMs===_closedMs){
+if(_closedMs!==null&&dMs===_closedMs){
         return `<td><div class="pmr-cell pmr-closed" onclick="pmrShowDay('${pid.replace(/'/g,"\\'")}','${pmrKey(d)}')" style="cursor:pointer;">Project Closed</div></td>`;
       }
       if(_closedMs!==null&&dMs>_closedMs){
         return `<td><div class="pmr-cell pmr-grey">—</div></td>`;
       }
-      const hv=d<=today?_dayInHold(d):null;
-      const c=hv?{cls:'pmr-hold',label:'On Hold',sub:hv.remark?hv.remark.slice(0,18):'',tags:''}:pmrEvalCell(attIdx[k],tbtIdx[k],d,today);
+const hv=d<=today?_dayInHold(d):null;
+
+  
+      let holdDayCount=null;
+      if(hv&&hv.start){
+        const s0=new Date(hv.start.getFullYear(),hv.start.getMonth(),hv.start.getDate()).getTime();
+        holdDayCount=Math.round((d.getTime()-s0)/86400000)+1;
+      }
+const c=hv?{cls:'pmr-hold',label:'On Hold'+(holdDayCount?' - '+holdDayCount:''),sub:hv.remark?hv.remark.slice(0,18):'',tags:''}:pmrEvalCell(attIdx[k],tbtIdx[k],d,today);
+      if(_closedMs!==null&&dMs===_closedMs){c.cls=c.cls+' pmr-closed';c.label=c.label+' (Completed)';}
       
       const inInstall=pcDays.has(pmrKey(d));
   
       let labelHtml=c.label;
+
+  
       if(c.remark){
         const rk=(pid+'|'+pmrKey(d)).replace(/'/g,"\\'");
         _pmrRemarks[pid+'|'+pmrKey(d)]={remark:c.remark,proj:pname,date:fmtDate(d),title:(c.label+(c.sub?' '+c.sub:''))};
@@ -2979,7 +3128,7 @@ const _dl=povComputeDelay(x);
     const delayTag=isDelayedRow?`<div style="font-size:9px;color:#e74c3c;font-weight:700;margin-top:2px;">⚠ ${_dl.delayBy}d delayed</div>`:'';
     return `<tr${isDelayedRow?' class="pmr-row-delay"':''}>
       <td class="pmr-c0" style="font-size:11px;">${city}</td>
-      <td class="pmr-c1" title="${pname.replace(/"/g,'&quot;')}">${pname}<div style="font-size:9px;color:var(--muted);font-weight:400;">${pid}</div>${delayTag}</td>
+      <td class="pmr-c1" title="${pname.replace(/"/g,'&quot;')}"><span onclick="pmrShowProjectSummary('${pid.replace(/'/g,"\\'")}','${pname.replace(/'/g,"\\'")}')" style="cursor:pointer;color:#4f8ef7;text-decoration:underline;text-underline-offset:2px;">${pname}</span><div style="font-size:9px;color:var(--muted);font-weight:400;">${pid}</div>${delayTag}</td>
       <td class="pmr-c2">${size}</td>
       <td class="pmr-c3" style="font-size:11px;">${pe}</td>
       ${cells}
@@ -3079,11 +3228,11 @@ function pemrDur(cin,cout){const a=pemrTimeP(cin),b=pemrTimeP(cout);if(!a||!b)re
 function pemrEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // Renders one project's detail card for a given day (shared by PE & Project-wise popups)
-function pemrProjectCard(ctx,pid,dk){
+function pemrProjectCard(ctx,pid,dk,peName){
   const [y,m,d]=dk.split('-').map(Number);
   const pr=mm=>({'onsite visit':4,'without visit update':3,'no activity':2})[mm]||(mm?1:0);
   const nm=ctx.projName[pid]||pid;
-  const rows=ctx.attByPD[pid+'|'+dk];
+  const rows=peName?(ctx.attByPEPD&&ctx.attByPEPD[peName+'|'+pid+'|'+dk]):ctx.attByPD[pid+'|'+dk];
   const head=(badge)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-weight:600;font-size:13px;color:var(--text);">${pemrEsc(nm)}</span><span style="font-size:10px;color:var(--muted);">${pemrEsc(pid)}</span><span style="margin-left:auto;">${badge}</span></div>`;
 const _leadRow=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
   if(_leadRow){
@@ -3098,9 +3247,12 @@ const _leadRow=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
       const rem=_dayInHold.remark?`<div style="font-size:11px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;margin-top:4px;white-space:pre-wrap;">📝 ${pemrEsc(_dayInHold.remark)}</div>`:'';
       return `<div class="pemr-card" style="border-left:3px solid #9b6dff;">${head('<span class="badge bp">⏸ On Hold</span>')}${rem}</div>`;
     }
-    const _met=computeProjectMetrics(pid);
-    if(_met.status==='done'){
-      return `<div class="pemr-card" style="border-left:3px solid #0d9488;">${head('<span class="badge" style="background:rgba(13,148,136,0.15);color:#0d9488;border:1px solid rgba(13,148,136,0.3);">✓ Completed</span>')}</div>`;
+const _met=computeProjectMetrics(pid);
+    if(_met.status==='done'&&_met.lastAttDate){
+      const _closeMs=new Date(_met.lastAttDate.getFullYear(),_met.lastAttDate.getMonth(),_met.lastAttDate.getDate()).getTime();
+      if(_popupMs>_closeMs){
+        return `<div class="pemr-card" style="border-left:3px solid #0d9488;">${head('<span class="badge" style="background:rgba(13,148,136,0.15);color:#0d9488;border:1px solid rgba(13,148,136,0.3);">✓ Completed</span>')}</div>`;
+      }
     }
   }
   if(!rows||!rows.length){
@@ -3176,7 +3328,10 @@ const _leadRow=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
 
 function pemrShowDay(peName,dk){
   const ctx=_pemrCtx;if(!ctx||!ctx.attByPD)return;
-  const pids=ctx.peProjects[peName]||[];
+  const assignedPids=ctx.peProjects[peName]||[];
+  const extraSet=(ctx.attByPEDay&&ctx.attByPEDay[peName+'|'+dk])||new Set();
+  const extraPids=[...extraSet].filter(p=>!assignedPids.includes(p));
+  const pids=[...assignedPids,...extraPids];
   const [y,m,d]=dk.split('-').map(Number);
   const popupMs=new Date(y,m-1,d).getTime();
   const dateLabel=new Date(y,m-1,d).toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
@@ -3199,18 +3354,25 @@ function pemrShowDay(peName,dk){
     if(r&&r.length)marked++;else notMarked++;
   });
 
-  const sortedPids=[...pids].sort((a,b)=>{
-    const ha=(ctx.attByPD[a+'|'+dk]&&ctx.attByPD[a+'|'+dk].length)?0:1;
-    const hb=(ctx.attByPD[b+'|'+dk]&&ctx.attByPD[b+'|'+dk].length)?0:1;
+const sortedPids=[...pids].sort((a,b)=>{
+    const ha=(ctx.attByPEPD[peName+'|'+a+'|'+dk]&&ctx.attByPEPD[peName+'|'+a+'|'+dk].length)?0:1;
+    const hb=(ctx.attByPEPD[peName+'|'+b+'|'+dk]&&ctx.attByPEPD[peName+'|'+b+'|'+dk].length)?0:1;
     if(ha!==hb)return ha-hb;
     return (ctx.projName[a]||a).localeCompare(ctx.projName[b]||b);
   });
-  const cards=sortedPids.map(pid=>pemrProjectCard(ctx,pid,dk)).join('');
+  const cards=sortedPids.map(pid=>{
+    const card=pemrProjectCard(ctx,pid,dk,peName);
+    if(extraPids.includes(pid)){
+      return card.replace('<div class="pemr-card"','<div class="pemr-card" data-extra="1"').replace('</span><span style="margin-left:auto;">','</span><span class="badge" style="background:rgba(79,142,247,.15);color:#4f8ef7;border:1px solid rgba(79,142,247,.3);margin-right:6px;">➕ Additional</span><span style="margin-left:auto;">');
+    }
+    return card;
+  }).join('');
 
   const onLeave=!!(ctx.leavesByPE&&ctx.leavesByPE[peName]&&ctx.leavesByPE[peName].has(dk));
   const toBeUpdate=toBeUpdatePids.length;
-  const summary=`<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-bottom:12px;align-items:center;">
-    <span>Total Projects: <b style="color:var(--text);">${pids.length}</b></span>
+const summary=`<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin-bottom:12px;align-items:center;">
+    <span>Assigned Projects: <b style="color:var(--text);">${assignedPids.length}</b></span>
+    ${extraPids.length?`<span>Additional Today: <b style="color:#4f8ef7;">${extraPids.length}</b></span>`:''}
     <span>To Be Updated: <b style="color:#f5a623;">${toBeUpdate}</b></span>
     <span>Activity updated: <b style="color:#34c98a;">${marked}</b></span>
     <span>Not marked: <b style="color:#e74c3c;">${notMarked}</b></span>
@@ -3229,7 +3391,7 @@ function pemrShowDay(peName,dk){
       <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;">×</button>
     </div>
     ${summary}
-    <div style="overflow:auto;display:flex;flex-direction:column;gap:10px;">${pids.length?cards:'<div class="empty">No projects assigned to this PE.</div>'}</div>
+    <div style="overflow:auto;display:flex;flex-direction:column;gap:10px;">${(()=>{const _oh=_pemrCtx.otherByPE&&_pemrCtx.otherByPE[peName]&&_pemrCtx.otherByPE[peName].has(dk);const _or=_oh?(_pemrCtx.otherByPE[peName].get(dk)||''):'';const oc=_oh?`<div class="pemr-card" style="border-left:3px solid #3bc0d8;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;"><span style="font-weight:600;font-size:13px;color:var(--text);">Other Task Update</span><span class="badge bb" style="margin-left:auto;">Other Task</span></div>${_or?`<div style="font-size:11px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;white-space:pre-wrap;">📝 ${pemrEsc(_or)}</div>`:'<div style="font-size:11px;color:var(--muted);">No remark provided.</div>'}</div>`:'';return oc+(pids.length?cards:(oc?'':'<div class="empty">No projects assigned to this PE.</div>'));})()}</div>
   </div>`;
   ov.style.display='flex';
 }
@@ -3237,6 +3399,8 @@ function pemrCloseDay(){const ov=document.getElementById('pemr-modal-ov');if(ov)
 
 function pemrShowPE(peName){
   const ctx=_pemrCtx;if(!ctx||!ctx.attByPD)return;
+  _pemrPECurrent=peName;
+  // _pemrPEView stays as-is across PE switches; remove next line if you want it to always reset to 'summary'
   const pids=ctx.peProjects[peName]||[];
   const yy=ctx.yy,mm=ctx.mm;
   const monthLabel=new Date(yy,mm-1,1).toLocaleDateString('en-IN',{month:'long',year:'numeric'});
@@ -3248,11 +3412,16 @@ function pemrShowPE(peName){
   else if(yy===today.getFullYear()&&(mm-1)===today.getMonth())expectedDays=Math.min(today.getDate(),daysInMonth);
   else expectedDays=daysInMonth;
 
-  const leavesSet=(ctx.leavesByPE&&ctx.leavesByPE[peName])||new Set();
-  let daysUpdated=0,projUpdates=0,tbtCnt=0,dprCnt=0,leaveCount=0;
-  const missed=[],leaveDates=[];
+const leavesSet=(ctx.leavesByPE&&ctx.leavesByPE[peName])||new Set();
+const otherSet=(ctx.otherByPE&&ctx.otherByPE[peName])||new Set();
+  const exitDate=(ctx.peExitDate&&ctx.peExitDate[peName])||null;
+  const exitMs=exitDate?new Date(exitDate.getFullYear(),exitDate.getMonth(),exitDate.getDate()).getTime():null;
+  let daysUpdated=0,projUpdates=0,tbtCnt=0,dprCnt=0,leaveCount=0,otherCount=0,exitedDays=0;
+  const missed=[],leaveDates=[],otherDates=[];
+  let weekOffCount=0;const weekOffDates=[];
   for(let dd=1;dd<=expectedDays;dd++){
     const dk=yy+'-'+mm+'-'+dd;
+    if(exitMs!==null&&new Date(yy,mm-1,dd).getTime()>=exitMs){exitedDays++;continue;}
     if(leavesSet.has(dk)){leaveCount++;leaveDates.push(dd);continue;}
     let anyToday=false;
     pids.forEach(pid=>{
@@ -3260,50 +3429,191 @@ function pemrShowPE(peName){
       if(ctx.attByPD[key]){anyToday=true;projUpdates++;}
       const t=ctx.tbtByPD[key];if(t){if(t.tbt)tbtCnt++;if(t.dpr)dprCnt++;}
     });
-    if(anyToday)daysUpdated++; else missed.push(dd);
+    if(anyToday)daysUpdated++;
+    else if(otherSet.has(dk)){otherCount++;otherDates.push(dd);}
+    else{
+      const dObj=new Date(yy,mm-1,dd);
+      if(dObj.getDay()===0){weekOffCount++;weekOffDates.push(dd);}
+      else missed.push(dd);
+    }
   }
-  // Effective expected days = elapsed - leaves
-  const effExpected=Math.max(0,expectedDays-leaveCount);
+  // Effective expected days = elapsed - leaves - week-off - other task
+  // Effective expected days = elapsed - leaves - week-off - other task - post-exit days
+  const effExpected=Math.max(0,expectedDays-leaveCount-weekOffCount-otherCount-exitedDays);
   const total=pids.length;
   const expectedProjUpdates=effExpected*total;
   const attPct=effExpected?Math.round(daysUpdated/effExpected*100):0;
   const updPct=expectedProjUpdates?Math.round(projUpdates/expectedProjUpdates*100):0;
 
-  const cards=
+const cards=
     metric('ti-briefcase','Total Projects',total,'Assigned to PE','#4f8ef7')+
-    metric('ti-calendar','Expected Days',effExpected,`${expectedDays} elapsed − ${leaveCount} leave · ${monthLabel}`,'#9b6dff')+
+    metric('ti-calendar','Expected Days',effExpected,`${expectedDays} elapsed − ${leaveCount} leave − ${otherCount} other · ${monthLabel}`,'#9b6dff')+
     metricWithBar('ti-calendar-check','Days Updated',daysUpdated,`${attPct}% of expected days`,'#34c98a',attPct,'#34c98a')+
     metricWithBar('ti-calendar-x','Not Updated',missed.length,`${effExpected?Math.round(missed.length/effExpected*100):0}% of expected days`,'#e74c3c',effExpected?missed.length/effExpected*100:0,'#e74c3c')+
     metric('ti-beach','Total Leave Days',leaveCount,leaveCount?'Approved leaves':'No leaves','#3bc0d8')+
+    metric('ti-checkbox','Other Task Days',otherCount,otherCount?'Excused (not absent)':'None','#3bc0d8')+
     metricWithBar('ti-checklist','Project Updates',projUpdates,`of ${expectedProjUpdates} expected · ${updPct}%`,'#f5a623',updPct,'#f5a623')+
-    metric('ti-clipboard-check','TBT Updated',tbtCnt,`of ${expectedProjUpdates} expected`,'#34c98a')+
-    metric('ti-file-report','DPR Updated',dprCnt,`of ${expectedProjUpdates} expected`,'#3bc0d8');
+    metric('ti-clipboard-check','TBT Updated',tbtCnt,'Days','#34c98a')+
+    metric('ti-file-report','DPR Updated',dprCnt,'Days','#3bc0d8');
 
   const wd=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const missedChips=missed.map(dd=>{const dt=new Date(yy,mm-1,dd);return `<span style="font-size:11px;background:rgba(231,76,60,.14);color:#ff7a6b;border:1px solid rgba(231,76,60,.3);border-radius:6px;padding:3px 8px;">${dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})} · ${wd[dt.getDay()]}</span>`;}).join('');
   const leaveChips=leaveDates.map(dd=>{const dt=new Date(yy,mm-1,dd);return `<span style="font-size:11px;background:rgba(56,178,210,.14);color:#3bc0d8;border:1px solid rgba(56,178,210,.3);border-radius:6px;padding:3px 8px;">${dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})} · ${wd[dt.getDay()]}</span>`;}).join('');
+  const weekOffChips=weekOffDates.map(dd=>{const dt=new Date(yy,mm-1,dd);return `<span style="font-size:11px;background:rgba(155,109,255,.14);color:#b79cff;border:1px solid rgba(155,109,255,.3);border-radius:6px;padding:3px 8px;">${dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})} · Sun</span>`;}).join('');
+  const weekOffSection=weekOffDates.length
+    ? `<div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px;">Week-Off Sundays (${weekOffDates.length})</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${weekOffChips}</div></div>`
+    : '';
   const missedSection=missed.length
     ? `<div style="margin-top:16px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px;">Not Updated Dates (${missed.length})</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${missedChips}</div></div>`
     : (effExpected?`<div style="margin-top:16px;font-size:12px;color:#34c98a;">✓ All ${effExpected} expected day(s) updated.</div>`:'');
-  const leaveSection=leaveDates.length
+const leaveSection=leaveDates.length
     ? `<div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px;">Leave Dates (${leaveDates.length})</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${leaveChips}</div></div>`
     : '';
+  const otherChips=otherDates.map(dd=>{const dt=new Date(yy,mm-1,dd);return `<span style="font-size:11px;background:rgba(56,178,210,.14);color:#3bc0d8;border:1px solid rgba(56,178,210,.3);border-radius:6px;padding:3px 8px;">${dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})} · ${wd[dt.getDay()]}</span>`;}).join('');
+  const otherSection=otherDates.length
+    ? `<div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#3bc0d8;margin-bottom:8px;">Other Task Update Dates (${otherDates.length}) — excused, not counted absent</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${otherChips}</div></div>`
+    : '';
+
+// ── Sub-view 2: Project-wise (assigned + additional, size/status/TAT) ──
+  const extraPidsAll=new Set();
+  for(let dd=1;dd<=daysInMonth;dd++){
+    const dk=yy+'-'+mm+'-'+dd;
+    const s=(ctx.attByPEDay&&ctx.attByPEDay[peName+'|'+dk]);
+    if(s)s.forEach(p=>{if(!pids.includes(p))extraPidsAll.add(p);});
+  }
+// Project row builder (reused for assigned + additional tables)
+// Per-project stats for the PE within the selected month (elapsed days)
+  const _pemrProjStats=(pid,isExtra)=>{
+    const row=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
+    const h=row?povHoldInfo(row):null;
+    const m=computeProjectMetrics(pid);
+    const vFin=row?vendorFinalizeDate(row):null;
+    const closeMs=(m.status==='done'&&m.lastAttDate)?new Date(m.lastAttDate.getFullYear(),m.lastAttDate.getMonth(),m.lastAttDate.getDate()).getTime():null;
+    const prio=mm2=>({'onsite visit':4,'without visit update':3,'no activity':2})[mm2]||(mm2?1:0);
+    let expected=0,updated=0,tbtDpr=0,noAct=0;
+    for(let dd=1;dd<=expectedDays;dd++){
+      const dk=yy+'-'+mm+'-'+dd;
+      const dObj=new Date(yy,mm-1,dd);
+      const dMs=new Date(yy,mm-1,dd).getTime();
+      const rows=ctx.attByPEPD[peName+'|'+pid+'|'+dk];
+      const isUpd=rows&&rows.length;
+      if(isUpd){
+        updated++;
+        const t=ctx.tbtByPD[pid+'|'+dk];
+        if(t&&t.tbt&&t.dpr)tbtDpr++;
+        let chosen=null,mNorm='';
+        rows.forEach(r=>{const mv=v(r,ATT_COL.M).toLowerCase();if(!chosen||prio(mv)>prio(mNorm)){chosen=r;mNorm=mv;}});
+        if(mNorm==='no activity')noAct++;
+      }
+      if(!isExtra){
+        if(leavesSet.has(dk))continue;
+        if(dObj.getDay()===0)continue;
+        if(!vFin)continue;
+        if(h){
+          if(h.cancelled&&h.cancelDate&&dMs>=new Date(h.cancelDate.getFullYear(),h.cancelDate.getMonth(),h.cancelDate.getDate()).getTime())continue;
+          const inHold=h.holdIntervals.some(iv=>{if(!iv.start)return false;const s=new Date(iv.start.getFullYear(),iv.start.getMonth(),iv.start.getDate()).getTime();const e=iv.end?new Date(iv.end.getFullYear(),iv.end.getMonth(),iv.end.getDate()).getTime():today.getTime();return dMs>=s&&dMs<=e;});
+          if(inHold)continue;
+        }
+        if(closeMs!==null&&dMs>closeMs)continue;
+        expected++;
+      }
+    }
+    return {expected:isExtra?null:expected,updated,tbtDpr,noAct,noUpdate:isExtra?null:Math.max(0,expected-updated)};
+  };
+
+  const _pemrProjRow=(pid,isExtra)=>{
+    const row=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
+    const nm=ctx.projName[pid]||pid;
+    const size=row?(lv(row,LEAD_COL.SIZE)||'—'):'—';
+    let statusBadge='—';
+    if(row){
+      const h=povHoldInfo(row);
+      if(h.cancelled)statusBadge='<span class="badge" style="background:rgba(224,81,138,0.15);color:#e0518a;border:1px solid rgba(224,81,138,0.3);">Cancelled</span>';
+      else if(h.onHold)statusBadge='<span class="badge bp">On Hold</span>';
+      else{
+        const m=computeProjectMetrics(pid);
+        if(m.status==='done')statusBadge='<span class="badge bg">Completed</span>';
+        else if(!vendorFinalizeDate(row))statusBadge='<span class="badge bgr">Vendor Not Finalized</span>';
+        else if(m.installStatus==='done')statusBadge='<span class="badge bb">Handover Pending</span>';
+        else statusBadge='<span class="badge bo">On Going</span>';
+      }
+    }
+    const st=_pemrProjStats(pid,isExtra);
+    const escId=pid.replace(/'/g,"\\'"),escName=nm.replace(/'/g,"\\'");
+    const flag=isExtra?' <span class="badge" style="background:rgba(245,166,35,.18);color:#f5a623;border:1px solid rgba(245,166,35,.4);font-size:9px;">➕ Additional</span>':'';
+    const dash='<span style="color:var(--muted);">—</span>';
+    return `<tr>
+      <td style="font-weight:500;cursor:pointer;color:#4f8ef7;" onclick="openProjectSummaryFor('${escId}','${escName}')">${pemrEsc(nm)}${flag}<div style="font-size:9px;color:var(--muted);">${pemrEsc(pid)}</div></td>
+      <td style="text-align:right;font-size:12px;">${size}</td>
+      <td>${statusBadge}</td>
+      <td style="text-align:right;font-size:12px;">${st.expected===null?dash:st.expected}</td>
+      <td style="text-align:right;font-size:12px;">${st.updated?`<b style="color:#34c98a;">${st.updated}</b>`:dash}</td>
+      <td style="text-align:center;font-size:12px;color:${st.tbtDpr?'#34c98a':'var(--muted)'};">${st.tbtDpr||'—'}</td>
+      <td style="text-align:center;font-size:12px;color:${st.noAct?'#f5a623':'var(--muted)'};">${st.noAct||'—'}</td>
+      <td style="text-align:right;font-size:12px;">${st.noUpdate===null?dash:(st.noUpdate?`<b style="color:#e74c3c;">${st.noUpdate}</b>`:'—')}</td>
+    </tr>`;
+  };
+  const _pemrProjHead='<tr><th>Project</th><th style="text-align:right;">Size</th><th>Status</th><th style="text-align:right;">Expected Days</th><th style="text-align:right;">Updated Days</th><th style="text-align:center;">TBT &amp; DPR</th><th style="text-align:center;">No Activity</th><th style="text-align:right;">No Update</th></tr>';
+  const extraArr=[...extraPidsAll];
+  const assignedRowsHtml=pids.map(pid=>_pemrProjRow(pid,false)).join('');
+  const extraRowsHtml=extraArr.map(pid=>_pemrProjRow(pid,true)).join('');
+  const projTable=pids.length
+    ? `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 6px;">Assigned Projects (${pids.length})</div><div class="table-wrap" style="max-height:38vh;overflow:auto;"><table style="font-size:12px;width:100%;"><thead>${_pemrProjHead}</thead><tbody>${assignedRowsHtml}</tbody></table></div>`
+    : '<div class="empty">No assigned projects.</div>';
+  const extraTable=extraArr.length
+    ? `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#f5a623;margin:16px 0 6px;display:flex;align-items:center;gap:6px;"><i class="ti ti-plus"></i> Additional Projects Updated This Month (${extraArr.length}) — expected not tracked, counts only</div><div class="table-wrap" style="max-height:30vh;overflow:auto;"><table style="font-size:12px;width:100%;"><thead>${_pemrProjHead}</thead><tbody>${extraRowsHtml}</tbody></table></div>`
+    : '';
+  const projSummaryLine=`<div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Assigned: <b style="color:var(--text);">${pids.length}</b>${extraArr.length?` · Additional this month: <b style="color:#f5a623;">${extraArr.length}</b>`:''} · Total: <b style="color:var(--text);">${pids.length+extraArr.length}</b></div>`;
+
+  const tabBar=`<div style="display:flex;gap:6px;margin:10px 0;background:var(--bg2);border-radius:8px;padding:4px;width:fit-content;">
+    <button onclick="pemrPESetView('summary')" style="font-size:12px;padding:6px 14px;border-radius:6px;border:none;background:${_pemrPEView==='summary'?'var(--accent)':'transparent'};color:${_pemrPEView==='summary'?'#fff':'var(--muted)'};cursor:pointer;font-weight:600;">Attendance Summary</button>
+    <button onclick="pemrPESetView('projects')" style="font-size:12px;padding:6px 14px;border-radius:6px;border:none;background:${_pemrPEView==='projects'?'var(--accent)':'transparent'};color:${_pemrPEView==='projects'?'#fff':'var(--muted)'};cursor:pointer;font-weight:600;">Project-wise</button>
+  </div>`;
+
+// Actual (assigned) vs Extra (additional) work insight
+  const insAssignedPids=new Set(), insExtraPids=new Set();
+  let insDaysWorked=0, insAssignedUpdates=0, insExtraUpdates=0;
+  for(let dd=1;dd<=expectedDays;dd++){
+    const dk=yy+'-'+mm+'-'+dd;
+    let aToday=0,eToday=0;
+    pids.forEach(pid=>{const r=ctx.attByPEPD[peName+'|'+pid+'|'+dk];if(r&&r.length){aToday++;insAssignedUpdates++;insAssignedPids.add(pid);}});
+    const daySet=ctx.attByPEDay&&ctx.attByPEDay[peName+'|'+dk];
+    if(daySet)daySet.forEach(pid=>{if(!pids.includes(pid)){eToday++;insExtraUpdates++;insExtraPids.add(pid);}});
+    if(aToday||eToday)insDaysWorked++;
+  }
+  const insightBlock=`<div class="card" style="margin-top:14px;">
+    <div class="card-title"><i class="ti ti-chart-bar"></i> Work Insight — Actual vs Extra</div>
+    <div style="font-size:13px;color:var(--text);line-height:1.7;">Worked on <b style="color:#34c98a;">${insDaysWorked}</b> day(s) this month · updated <b style="color:#4f8ef7;">${insAssignedPids.size}</b> assigned project(s) (<b>${insAssignedUpdates}</b> project-day updates) and <b style="color:#f5a623;">${insExtraPids.size}</b> additional project(s) (<b>${insExtraUpdates}</b> project-day updates).</div>
+    <div class="metrics" style="margin-top:10px;">${metric('ti-calendar-check','Days Worked',insDaysWorked,'Assigned or extra','#34c98a')}${metric('ti-briefcase','Assigned Projects',insAssignedPids.size,`${insAssignedUpdates} project-day updates`,'#4f8ef7')}${metric('ti-plus','Extra Projects',insExtraPids.size,`${insExtraUpdates} project-day updates`,'#f5a623')}</div>
+  </div>`;
+const summaryContent=total?`<div class="metrics" style="margin-top:8px;">${cards}</div>
+    ${insightBlock}
+    ${missedSection}
+    ${weekOffSection}
+    ${leaveSection}
+    ${otherSection}
+    
+    <div style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.5;">Expected = ${effExpected} day(s) (${expectedDays} elapsed − ${leaveCount} leave − ${otherCount} other task${exitedDays?` − ${exitedDays} post-exit`:''}) × ${total} project(s). Leave &amp; Other-Task dates are excluded from expected.${exitDate?` <b style="color:#e74c3c;">PE exited on ${fmtDate(exitDate)}.</b>`:''} TBT/DPR counts are project-days with a report logged in the TBT sheet.</div>`
+    :'<div class="empty" style="margin-top:10px;">No projects assigned to this PE (Lead not assigned).</div>';
+
+  
+
+  const bodyContent=_pemrPEView==='projects'?(projSummaryLine+projTable+extraTable):summaryContent;
 
   let ov=document.getElementById('pemr-modal-ov');
   if(!ov){ov=document.createElement('div');ov.id='pemr-modal-ov';ov.className='pmr-modal-ov';ov.onclick=(e)=>{if(e.target===ov)pemrCloseDay();};document.body.appendChild(ov);}
-  ov.innerHTML=`<div class="pmr-modal" style="max-width:620px;">
+  ov.innerHTML=`<div class="pmr-modal" style="max-width:700px;max-height:88vh;display:flex;flex-direction:column;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;">
-      <div><div style="font-size:15px;font-weight:600;color:var(--text);">${pemrEsc(peName)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Attendance summary · ${monthLabel}</div></div>
+      <div><div style="font-size:15px;font-weight:600;color:var(--text);">${pemrEsc(peName)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${monthLabel}</div></div>
       <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;">×</button>
     </div>
-    ${total?`<div class="metrics" style="margin-top:8px;">${cards}</div>
-    ${missedSection}
-    ${leaveSection}
-    <div style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.5;">Expected = ${effExpected} day(s) (${expectedDays} elapsed − ${leaveCount} leave) × ${total} project(s). Leave dates are excluded from expected. TBT/DPR counts are project-days with a report logged in the TBT sheet.</div>`
-    :'<div class="empty" style="margin-top:10px;">No projects assigned to this PE (Lead not assigned).</div>'}
+    ${tabBar}
+    <div style="overflow:auto;">${bodyContent}</div>
   </div>`;
   ov.style.display='flex';
 }
+
+  
 document.addEventListener('keydown',e=>{if(e.key==='Escape')pemrCloseDay();});
 
   // ─────────────────────────────────────────────────────────────
@@ -3324,6 +3634,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')pemrCloseDay();});
 // ── State + helpers for hierarchy expand/collapse ──
 let _pemrDateExp = new Set();   // expanded keys: "c:<cluster>", "c:<cluster>|m:<cm>", "c:<cluster>|m:<cm>|p:<pe>"
 let _pemrDateDk  = null;        // current dateKey being viewed (for re-render on toggle)
+
+  let _pemrPEView='summary'; // 'summary' | 'projects'
+function pemrPESetView(v){_pemrPEView=v;if(_pemrPECurrent)pemrShowPE(_pemrPECurrent);}
+let _pemrPECurrent=null;
+
+  
 
 function pemrDateToggle(k){
   if(_pemrDateExp.has(k)) _pemrDateExp.delete(k); else _pemrDateExp.add(k);
@@ -3362,9 +3678,9 @@ function pemrShowDateSummary(dk){
   pes.forEach(pe=>{
     const pids=ctx.peProjects[pe]||[];
     const onLeave=!!(ctx.leavesByPE&&ctx.leavesByPE[pe]&&ctx.leavesByPE[pe].has(dk));
+    const onOther=!!(ctx.otherByPE&&ctx.otherByPE[pe]&&ctx.otherByPE[pe].has(dk));
     if(onLeave) gOnLeave++;
-    const st={total:0,updated:0,pending:0,onsite:0,without:0,noact:0,onLeave,projects:[]};
-    pids.forEach(pid=>{
+    const st={total:0,updated:0,pending:0,onsite:0,without:0,noact:0,onLeave,onOther,projects:[]};    pids.forEach(pid=>{
       const row=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
       if(row){
         const h=povHoldInfo(row);
@@ -3376,7 +3692,7 @@ function pemrShowDateSummary(dk){
       if(met.status==='done'){gCompleted++;return;}
       if(row&&!vendorFinalizeDate(row)){gVendorNotFinal++;return;}
       st.total++;gTotal++;
-      const arows=ctx.attByPD[pid+'|'+dk];
+      const arows=ctx.attByPEPD&&ctx.attByPEPD[pe+'|'+pid+'|'+dk];
       const nm=ctx.projName[pid]||pid;
       if(!arows||!arows.length){ st.pending++; gPend++; st.projects.push({pid,name:nm,status:'pending'}); return; }
       st.updated++; gUpd++;
@@ -3391,29 +3707,32 @@ function pemrShowDateSummary(dk){
     peStats[pe]=st;
   });
 
- let peUpd=0,peFull=0,pePart=0,pePend=0,peLeave=0,peWO=0;
+let peUpd=0,peFull=0,pePart=0,pePend=0,peLeave=0,peWO=0,peNotAssigned=0,peNothingToUpdate=0,peOther=0;
   const peCat={};
   pes.forEach(pe=>{
     const st=peStats[pe];
-    const lv=(ctx.leavesByPE&&ctx.leavesByPE[pe]&&ctx.leavesByPE[pe].get)?(ctx.leavesByPE[pe].get(dk)||''):'';
-    if(st.onLeave){if(String(lv).toLowerCase().indexOf('week')>=0){peWO++;peCat[pe]='weekoff';}else{peLeave++;peCat[pe]='leave';}return;}
-    if(st.total===0){peCat[pe]='none';return;}
+    const leaveVal=(ctx.leavesByPE&&ctx.leavesByPE[pe]&&ctx.leavesByPE[pe].get)?(ctx.leavesByPE[pe].get(dk)||''):'';
+    if(st.onLeave){if(String(leaveVal).toLowerCase().indexOf('week')>=0){peWO++;peCat[pe]='weekoff';}else{peLeave++;peCat[pe]='leave';}return;}
+    if(st.onOther&&st.updated===0){peOther++;peCat[pe]='other';return;}
+    const pids=ctx.peProjects[pe]||[];
+    if(!pids.length){peNotAssigned++;peCat[pe]='notassigned';return;}
+    if(st.total===0){peNothingToUpdate++;peCat[pe]='nothingtoupdate';return;}
     if(st.updated>0){peUpd++;if(st.updated>=st.total)peFull++;else pePart++;peCat[pe]='upd';}
     else{pePend++;peCat[pe]='pending';}
   });
-  const peActive=peUpd+pePend;
+  const peToBeUpdate=peUpd+pePend;
   const selCard=(key)=>_pemrDateCardF===key?'outline:2px solid var(--accent);':'';
   const cardBtn=(key,inner)=>`<div onclick="pemrDateSetCardF('${key}')" style="cursor:pointer;${selCard(key)}border-radius:16px;">${inner}</div>`;
 const cards=
     metric('ti-users','Total PEs',pes.length,'In current view','#4f8ef7')+
-    cardBtn('upd',metricWithBar('ti-user-check','PEs Updated',peUpd,`Full ${peFull} · Partial ${pePart} · ${peActive?Math.round(peUpd/peActive*100):0}%`,'#34c98a',peActive?peUpd/peActive*100:0,'#34c98a'))+
+    cardBtn('notassigned',metric('ti-user-off','Not Assigned Yet',peNotAssigned,'No projects','#8b92b0'))+
     cardBtn('leave',metric('ti-beach','On Leave',peLeave,'PEs','#3bc0d8'))+
-    cardBtn('weekoff',metric('ti-calendar-off','Week-Off',peWO,'PEs','#9b6dff'))+
-    cardBtn('pending',metricWithBar('ti-user-x','Pending',pePend,`${peActive?Math.round(pePend/peActive*100):0}% of active PEs`,'#e74c3c',peActive?pePend/peActive*100:0,'#e74c3c'))+
-    metric('ti-circle-check','Completed',gCompleted,'Projects','#0d9488')+
-    metric('ti-player-pause','On Hold',gHold,'Projects','#9b6dff')+
-    metric('ti-ban','Cancelled',gCancel,'Projects','#e0518a')+
-    metric('ti-file-off','Vendor Not Finalized',gVendorNotFinal,'Projects','#8b92b0');
+cardBtn('weekoff',metric('ti-calendar-off','Week-Off',peWO,'PEs','#9b6dff'))+
+    cardBtn('other',metric('ti-checkbox','Other Task',peOther,'Other task update','#3bc0d8'))+
+    cardBtn('nothingtoupdate',metric('ti-circle-check','Project Completed',peNothingToUpdate,'All projects done/hold/cancelled','#0d9488'))+
+    cardBtn('tobeupdate',metric('ti-list-check','To Be Updated',peToBeUpdate,'PEs with active projects','#f5a623'))+
+    cardBtn('upd',metricWithBar('ti-user-check','Updated',peUpd,`Full ${peFull} · Partial ${pePart} · ${peToBeUpdate?Math.round(peUpd/peToBeUpdate*100):0}%`,'#34c98a',peToBeUpdate?peUpd/peToBeUpdate*100:0,'#34c98a'))+
+    cardBtn('pending',metricWithBar('ti-user-x','Pending',pePend,`${peToBeUpdate?Math.round(pePend/peToBeUpdate*100):0}% of to-be-updated`,'#e74c3c',peToBeUpdate?pePend/peToBeUpdate*100:0,'#e74c3c'));
   const pesView=_pemrDateCardF?pes.filter(pe=>peCat[pe]===_pemrDateCardF):pes;
   const escq=s=>String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
   
@@ -3455,6 +3774,7 @@ const cards=
           const peKey=cmKey+'|p:'+pe, st=peStats[pe]||zero(), peExp=_pemrDateExp.has(peKey);
           let peStatus='';
           if(st.onLeave)peStatus='<span class="badge bb">🏖 Leave</span>';
+          else if(st.onOther&&st.updated===0)peStatus='<span class="badge bb">Other Task</span>';
           else if(st.total===0)peStatus='<span class="badge bgr">—</span>';
           else if(st.updated===0)peStatus='<span class="badge br">Absent</span>';
           else if(st.updated>=st.total)peStatus='<span class="badge bg">All Updated</span>';
@@ -3486,35 +3806,41 @@ const cards=
   // ── PE-WISE FLAT VIEW ──
   function renderFlat(){
     const rows=pesView.map(pe=>{
-      const st=peStats[pe]||{total:0,updated:0,pending:0,onsite:0,without:0,noact:0,onLeave:false};
+      const st=peStats[pe]||{total:0,updated:0,pending:0,onsite:0,without:0,noact:0,onLeave:false,onOther:false};
       let statusKey='none';
       if(st.onLeave)statusKey='leave';
+      else if(st.onOther&&st.updated===0)statusKey='other';
       else if(st.total===0)statusKey='none';
       else if(st.updated===0)statusKey='absent';
       else if(st.updated>=st.total)statusKey='full';
       else statusKey='partial';
       return{pe,st,statusKey,cluster:ctx.peClusterMap[pe]||'—',cityMgr:ctx.peCityMgrMap[pe]||'—'};
     }).sort((a,b)=>{
-      const ord={full:0,partial:1,absent:2,leave:3,none:4};
+      const ord={full:0,partial:1,absent:2,other:3,leave:4,none:5};
+      
       if(ord[a.statusKey]!==ord[b.statusKey])return ord[a.statusKey]-ord[b.statusKey];
       if(b.st.updated!==a.st.updated)return b.st.updated-a.st.updated;
       return a.pe.localeCompare(b.pe);
     });
-    let fullN=0,partialN=0,absentN=0,leaveN=0;
-    rows.forEach(r=>{if(r.statusKey==='full')fullN++;else if(r.statusKey==='partial')partialN++;else if(r.statusKey==='absent')absentN++;else if(r.statusKey==='leave')leaveN++;});
+let fullN=0,partialN=0,absentN=0,leaveN=0,otherN=0;
+    rows.forEach(r=>{if(r.statusKey==='full')fullN++;else if(r.statusKey==='partial')partialN++;else if(r.statusKey==='absent')absentN++;else if(r.statusKey==='leave')leaveN++;else if(r.statusKey==='other')otherN++;});
     const summary=`<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin:10px 0 12px;padding:10px 12px;background:var(--surface2);border-radius:8px;">
       <span>PEs All Updated: <b style="color:#34c98a;">${fullN}</b></span>
       <span>Partial: <b style="color:#f5a623;">${partialN}</b></span>
       <span>Absent: <b style="color:#e74c3c;">${absentN}</b></span>
-      <span>On Leave: <b style="color:#3bc0d8;">${leaveN}</b></span>
+      <span>Other Task: <b style="color:#3bc0d8;">${otherN}</b></span>
+<span>On Leave: <b style="color:#3bc0d8;">${leaveN}</b></span>
     </div>`;
     const body=rows.map((r,i)=>{
-      let badge='';
+let badge='';
       if(r.statusKey==='leave')badge='<span class="badge bb">🏖 Leave</span>';
+      else if(r.statusKey==='other')badge='<span class="badge bb">Other Task</span>';
       else if(r.statusKey==='none')badge='<span class="badge bgr">—</span>';
       else if(r.statusKey==='absent')badge='<span class="badge br">Absent</span>';
       else if(r.statusKey==='full')badge='<span class="badge bg">All Updated</span>';
       else badge='<span class="badge bo">Partial</span>';
+
+      
       const peLink=`<span onclick="pemrShowDay('${escq(r.pe)}','${dk}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;color:var(--text);font-weight:500;">${pemrEsc(r.pe)}</span>`;
       return `<tr>
         <td style="color:var(--muted);text-align:center;">${i+1}</td>
@@ -3637,18 +3963,39 @@ const Dp_CID=ci(D.dpr.h,'ChildID','child');
   // Also include any PE present in Lead Tracker but missing from master (so nothing is lost)
   Object.keys(peAssignedAny).forEach(p=>{if(!allPEs.includes(p))allPEs.push(p);});
 
-  const cityCMfilterActive=fCity.size||fCluster.size||fCityMgr.size;
+const cityCMfilterActive=fCity.size||fCluster.size||fCityMgr.size;
+  // PE Status / Exit date (new PE Master columns)
+  const peStatusIdx=ci(D.pe.h,'PEStatus','PE Status'),peExitIdx=ci(D.pe.h,'Exitdate','Exit date','exit');
+  const peExitDate={},peStatusMap={};
+  D.pe.r.forEach(x=>{const nm=v(x,1);if(!nm)return;if(peStatusIdx>=0)peStatusMap[nm]=v(x,peStatusIdx);if(peExitIdx>=0){const d=parseDate(v(x,peExitIdx));if(d)peExitDate[nm]=d;}});
   let peNames=allPEs.filter(pe=>{
     if(fPE.size&&!fPE.has(pe))return false;
     if(cityCMfilterActive&&!(peProjects[pe]&&peProjects[pe].length))return false; // scoped out
+    const ex=peExitDate[pe];
+    if(ex){const exY=ex.getFullYear(),exM=ex.getMonth();if(exY<yy||(exY===yy&&exM<mm-1))return false;} // exited in an earlier month → don't list
     return true;
   }).sort((a,b)=>a.localeCompare(b));
 
+  
+
   // Off-days index: PE name -> Map of dateKey -> 'Leave' | 'Week-Off' (this month).
   // Daily Activity sheet: A(0)=Name (was email), B(1)=Task Date, C(2)=Day Status ("Leave"/"Week-Off").
-  const peEmailIdx=ci(D.pe.h,'email','mail');
+const peEmailIdx=ci(D.pe.h,'email','mail');
   const emailToPE={};
   if(peEmailIdx>=0)D.pe.r.forEach(x=>{const em=v(x,peEmailIdx).toLowerCase().trim(),nm=v(x,1);if(em&&nm)emailToPE[em]=nm;});
+  // Attendance resolved to the actual PE who checked in (col E email) — not the project's static Lead Tracker PE.
+const attByPEPD={},attByPEDay={};
+  D.att.r.forEach(x=>{
+    const pid=v(x,ATT_COL.PID),d=parseDate(v(x,ATT_COL.DATE));
+    if(!pid||!d||d.getFullYear()!==yy||d.getMonth()!==mm-1)return;
+    const email=v(x,ATT_COL.EMAIL).toLowerCase().trim();
+    const pe=emailToPE[email];if(!pe)return;
+    const dk=pmrKey(d);
+    const k=pe+'|'+pid+'|'+dk;
+    (attByPEPD[k]=attByPEPD[k]||[]).push(x);
+    const dayKey=pe+'|'+dk;
+    (attByPEDay[dayKey]=attByPEDay[dayKey]||new Set()).add(pid);
+  });
   // Canonical PE-name lookup (case-insensitive) so Daily Activity names map to the master spelling
   const peNameCanon={};
   allPEs.forEach(n=>{const k=String(n).trim().toLowerCase();if(k)peNameCanon[k]=n;});
@@ -3657,16 +4004,19 @@ const Dp_CID=ci(D.dpr.h,'ChildID','child');
     if(raw.includes('@'))return emailToPE[raw.toLowerCase()]||'';   // backward-compat if an email is still used
     return peNameCanon[raw.toLowerCase()]||raw;                      // column A is a name now
   };
-  const leavesByPE={};
+const leavesByPE={};
+  const otherByPE={};
   D.daily.r.forEach(x=>{
     const st=String(v(x,2)).toLowerCase().trim();
     const isLeave=(st==='leave');
     const isOff=(st==='week-off'||st==='weekoff'||st==='week off'||st==='weekly off'||st==='off');
-    if(!isLeave&&!isOff)return;                 // only Leave / Week-Off count as off-days
+    const isOther=(st==='other task update'||st.indexOf('other task')>=0);
+    if(!isLeave&&!isOff&&!isOther)return;        // Leave / Week-Off / Other Task Update
     const d=parseDate(v(x,1));
     if(!d||d.getFullYear()!==yy||d.getMonth()!==mm-1)return;
     const nm=resolveDailyName(v(x,0)); if(!nm)return;
-    (leavesByPE[nm]=leavesByPE[nm]||new Map()).set(pmrKey(d), isOff?'Week-Off':'Leave');
+    if(isLeave||isOff){(leavesByPE[nm]=leavesByPE[nm]||new Map()).set(pmrKey(d), isOff?'Week-Off':'Leave');}
+    else if(isOther){(otherByPE[nm]=otherByPE[nm]||new Map()).set(pmrKey(d), v(x,6)||'');}   // col G = index 6
   });
 
   // Cluster Head / City Manager maps from PE Master (header-matched)
@@ -3677,7 +4027,7 @@ const Dp_CID=ci(D.dpr.h,'ChildID','child');
   D.lead.r.forEach(x=>{const pe=lv(x,LEAD_COL.PE);if(!pe)return;if(!peClusterMap[pe])peClusterMap[pe]=lv(x,LEAD_COL.CLUSTER);if(!peCityMgrMap[pe])peCityMgrMap[pe]=lv(x,LEAD_COL.CITYMGR);});
 
   // Save context for the day-detail popup
-  _pemrCtx={peProjects,projName,attByPD,tbtByPD,dprByPD,projDates,leavesByPE,peNames,peClusterMap,peCityMgrMap,yy,mm,A_CI,A_CO,A_LOC};
+  _pemrCtx={peProjects,projName,attByPD,attByPEPD,attByPEDay,tbtByPD,dprByPD,projDates,leavesByPE,otherByPE,peExitDate,peStatusMap,peNames,peClusterMap,peCityMgrMap,yy,mm,A_CI,A_CO,A_LOC};
 
   const wd=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   head.innerHTML='<tr><th class="pemr-c0">PE Name</th><th class="pemr-c1">Projects</th>'+
@@ -3686,30 +4036,64 @@ const Dp_CID=ci(D.dpr.h,'ChildID','child');
   if(!peNames.length){body.innerHTML=`<tr><td class="empty" colspan="${2+days.length}">No PEs match the selected filters</td></tr>`;return;}
 
   body.innerHTML=peNames.map(pe=>{
-    const pids=peProjects[pe]||[];const total=pids.length;
+const pids=peProjects[pe]||[];
     const leadNotAssigned=!peAssignedAny[pe];
     const peEsc=pe.replace(/'/g,"\\'").replace(/"/g,'&quot;');
     const cells=days.map(d=>{
-      const dk=pmrKey(d);const future=d>today;
+const dk=pmrKey(d);const future=d>today;
       if(leadNotAssigned)return `<td><div class="pmr-cell pmr-grey">—</div></td>`;
+      const _exd=peExitDate[pe];
+      if(_exd){
+        const _exMs=new Date(_exd.getFullYear(),_exd.getMonth(),_exd.getDate()).getTime();
+        const _curMs=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+        if(_curMs===_exMs)return `<td><div class="pmr-cell pmr-red" title="PE exited on ${fmtDate(_exd)}" style="font-weight:600;">Exited</div></td>`;
+        if(_curMs>_exMs)return `<td><div class="pmr-cell pmr-grey">—</div></td>`;
+      }
       const onLeave=(leavesByPE[pe]&&leavesByPE[pe].has(dk));
+      const onOther=(otherByPE[pe]&&otherByPE[pe].has(dk));
+      const dMs=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+      // Active pids for this specific day: exclude projects completed on/before this day (or Hold/Cancelled/Vendor-Not-Finalized)
+      const activePids=pids.filter(pid=>{
+        const row=D.lead.r.find(x=>lv(x,LEAD_COL.PID)===pid);
+        if(row){
+          const h=povHoldInfo(row);
+          if(h.cancelled&&h.cancelDate&&dMs>=new Date(h.cancelDate.getFullYear(),h.cancelDate.getMonth(),h.cancelDate.getDate()).getTime())return false;
+          const dayInHold=h.holdIntervals.some(iv=>{if(!iv.start)return false;const s=new Date(iv.start.getFullYear(),iv.start.getMonth(),iv.start.getDate()).getTime();const e=iv.end?new Date(iv.end.getFullYear(),iv.end.getMonth(),iv.end.getDate()).getTime():today.getTime();return dMs>=s&&dMs<=e;});
+          if(dayInHold)return false;
+          if(!vendorFinalizeDate(row))return false;
+        }
+        const met=computeProjectMetrics(pid);
+        if(met.status==='done'&&met.lastAttDate){
+          const closeMs=new Date(met.lastAttDate.getFullYear(),met.lastAttDate.getMonth(),met.lastAttDate.getDate()).getTime();
+          if(dMs>closeMs)return false;
+        }
+        return true;
+      });
+      const total=activePids.length;
       let updated=0,tbt=false,dpr=false;
-      pids.forEach(pid=>{
-        if(attProjDate.has(pid+'|'+dk))updated++;
+      activePids.forEach(pid=>{
+        const peRows=attByPEPD[pe+'|'+pid+'|'+dk];
+        if(peRows&&peRows.length)updated++;
         const t=tbtIdx[pid+'|'+dk];if(t){if(t.tbt)tbt=true;if(t.dpr)dpr=true;}
       });
-      let cls,label;
-      if(updated===0){
-        if(onLeave){cls='pmr-teal';label=(leavesByPE[pe].get(dk)||'Leave');}
-        else{cls=future?'pmr-grey':'pmr-red';label=future?'—':'Absent';}
-      } else{cls=(updated>=total)?'pmr-green':'pmr-orange';label=`${updated}/${total} updated`;}
-      const tags=(updated>0)?`<div class="pmr-tags"><span class="pmr-tg ${tbt?'pmr-green':'pmr-red'}">TBT ${tbt?'✓':'—'}</span><span class="pmr-tg ${dpr?'pmr-green':'pmr-red'}">DPR ${dpr?'✓':'—'}</span></div>`:'';
+      const extraSet=attByPEDay[pe+'|'+dk];
+      const extraCount=extraSet?[...extraSet].filter(p=>!activePids.includes(p)).length:0;
+let cls,label;
+      const isSunday=d.getDay()===0;
+      if(updated>0){cls=(updated>=total)?'pmr-green':'pmr-orange';label=`${updated}/${total} updated`;}
+      else if(onLeave){cls=future?'pmr-grey':'pmr-teal';label=future?'—':(leavesByPE[pe].get(dk)||'Leave');}
+      else if(onOther){cls=future?'pmr-grey':'pmr-teal';label=future?'—':'Other Task Update';}
+      else if(total===0){cls='pmr-grey';label='—';}
+      else if(isSunday){cls=future?'pmr-grey':'pmr-teal';label=future?'—':'Week-Off';}
+      else{cls=future?'pmr-grey':'pmr-red';label=future?'—':'Absent';}
+      
+      const tags=(updated>0)?`<div class="pmr-tags"><span class="pmr-tg ${tbt?'pmr-green':'pmr-red'}">TBT ${tbt?'✓':'—'}</span><span class="pmr-tg ${dpr?'pmr-green':'pmr-red'}">DPR ${dpr?'✓':'—'}</span>${extraCount?`<span class="pmr-tg" style="background:rgba(79,142,247,.2);color:#4f8ef7;">+${extraCount} extra</span>`:''}</div>`:'';
       const click=future?'':` onclick="pemrShowDay('${peEsc}','${dk}')" style="cursor:pointer;"`;
       return `<td><div class="pmr-cell ${cls}"${click}>${label}${tags}</div></td>`;
     }).join('');
-    const projCell=leadNotAssigned
+const projCell=leadNotAssigned
       ? '<span style="color:var(--muted);">—</span>'
-      : `<span class="badge bp">${total}</span>`;
+      : `<span class="badge bp">${pids.length}</span>`;
     const nameLink=`<span onclick="pemrShowPE('${peEsc}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${pe}</span>`;
     const nameCell=leadNotAssigned
       ? `${nameLink}<div style="font-size:9px;color:#e74c3c;font-weight:400;margin-top:2px;">Lead not assigned</div>`
@@ -3762,9 +4146,10 @@ function renderPEMRPESummary(){
       }
       const t=ctx.tbtByPD[key];if(t){if(t.tbt){tbtCnt++;projStats[pid].tbt++;}if(t.dpr){dprCnt++;projStats[pid].dpr++;}}
     });
-    if(anyToday)daysUpdated++; else missed.push(dd);
+if(anyToday)daysUpdated++; else missed.push(dd);
   }
-  const effExpected=Math.max(0,expectedDays-leaveCount);
+  const weekOffCount=missed.filter(dd=>new Date(yy,mm-1,dd).getDay()===0).length;
+  const effExpected=Math.max(0,expectedDays-leaveCount-weekOffCount);
   const total=pids.length;
   const expectedProjUpdates=effExpected*total;
   const attPct=effExpected?Math.round(daysUpdated/effExpected*100):0;
@@ -3777,6 +4162,7 @@ function renderPEMRPESummary(){
     metricWithBar('ti-calendar-check','Days Updated',daysUpdated,`${attPct}% of expected days`,'#34c98a',attPct,'#34c98a')+
     metricWithBar('ti-calendar-x','Days Not Updated',missed.length,`${effExpected?Math.round(missed.length/effExpected*100):0}% of expected days`,'#e74c3c',effExpected?missed.length/effExpected*100:0,'#e74c3c')+
     metric('ti-beach','Total Leave Days',leaveCount,leaveCount?'Approved leaves':'No leaves','#3bc0d8')+
+    metric('ti-calendar-off','Week-Off (Sundays)',weekOffCount,weekOffCount?'Auto Sunday off':'None','#9b6dff')+
     metricWithBar('ti-checklist','Project Updates',projUpdates,`of ${expectedProjUpdates} expected · ${updPct}%`,'#f5a623',updPct,'#f5a623')+
     metric('ti-clipboard-check','TBT Updated',tbtCnt,`of ${expectedProjUpdates} expected`,'#34c98a')+
     metric('ti-file-report','DPR Updated',dprCnt,`of ${expectedProjUpdates} expected`,'#3bc0d8');
@@ -5970,6 +6356,69 @@ function downloadNURCSV(){
   URL.revokeObjectURL(url);
 }
 
+
+  function buildCMP(){
+  const rows=povGetBaseRows();
+  const done=[];
+  rows.forEach(x=>{
+    const m=computeProjectMetrics(lv(x,LEAD_COL.PID));
+    if(m.status!=='done')return;
+    const h=povHoldInfo(x);
+    const tag=povProjectStatuses(x)[0];
+    let reason='Project Closed';
+    if(h.cancelled)reason='Cancelled';
+    else if(h.onHold)reason='On Hold';
+    else if(!lv(x,LEAD_COL.PE))reason='Not Assigned (no PE)';
+    else if(!vendorFinalizeDate(x))reason='Vendor Not Finalized';
+    done.push({
+      pid:lv(x,LEAD_COL.PID),
+      name:lv(x,LEAD_COL.PNAME)||lv(x,LEAD_COL.PID),
+      city:lv(x,LEAD_COL.CITY)||'—',
+      pe:lv(x,LEAD_COL.PE)||'',
+      vendor:vendorFinalizeDate(x)?'Yes':'No',
+      hold:h.onHold,
+      cancel:h.cancelled,
+      tag,reason,
+      closed:reason==='Project Closed'
+    });
+  });
+  const totalDone=done.length;
+  const closed=done.filter(d=>d.closed).length;
+  const mismatch=done.filter(d=>!d.closed);
+  const diff=totalDone-closed;
+
+  const met=document.getElementById('cmp-metrics');
+  if(met)met.innerHTML=
+    metric('ti-circle-check','Project Completed (card)',totalDone,'m.status = done','#0d9488')+
+    metric('ti-sun','Project Closed (stage)',closed,'passes all gates','#4f8ef7')+
+    metric('ti-git-compare','Difference',diff,diff===0?'reconciled':'done but not Closed','#e74c3c');
+
+  const body=document.getElementById('cmp-body');
+  const head=document.getElementById('cmp-head');
+  if(head)head.innerHTML='<tr><th>#</th><th>Project ID</th><th>Project Name</th><th>City</th><th>PE</th><th>Vendor Finalized</th><th>On Hold</th><th>Cancelled</th><th>Reason it isn\'t "Project Closed"</th></tr>';
+  if(body){
+    if(!mismatch.length){
+      body.innerHTML='<tr><td colspan="9" class="empty">No difference — both counts reconcile 🎉</td></tr>';
+    }else{
+      body.innerHTML=mismatch.map((d,i)=>{
+        const rc={'Cancelled':'#e0518a','On Hold':'#9b6dff','Not Assigned (no PE)':'#e74c3c','Vendor Not Finalized':'#8b92b0'}[d.reason]||'#8b92b0';
+        const escId=d.pid.replace(/'/g,"\\'"),escName=d.name.replace(/'/g,"\\'");
+        return `<tr>
+          <td style="color:var(--muted)">${i+1}</td>
+          <td><span class="badge bp">${d.pid}</span></td>
+          <td style="font-weight:500;cursor:pointer;color:#4f8ef7;" onclick="openProjectSummaryFor('${escId}','${escName}')">${pemrEsc(d.name)}</td>
+          <td style="font-size:12px;">${pemrEsc(d.city)}</td>
+          <td style="font-size:12px;">${d.pe?pemrEsc(d.pe):'<span style="color:#e74c3c;">Not Assigned</span>'}</td>
+          <td>${d.vendor==='Yes'?'<span class="badge bg">Yes</span>':'<span class="badge br">No</span>'}</td>
+          <td>${d.hold?'<span class="badge bp">Yes</span>':'<span style="color:var(--muted);">—</span>'}</td>
+          <td>${d.cancel?'<span class="badge br">Yes</span>':'<span style="color:var(--muted);">—</span>'}</td>
+          <td><span class="badge" style="background:${rc}22;color:${rc};border:1px solid ${rc}55;font-weight:600;">${d.reason}</span></td>
+        </tr>`;
+      }).join('');
+    }
+  }
+}
+  
   
 loadAll();
 
