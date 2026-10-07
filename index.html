@@ -40,6 +40,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tabs .tab:nth-child(7){--tc:#e0518a;}
 .tabs .tab:nth-child(8){--tc:#7d5fff;}
 .tabs .tab:nth-child(9){--tc:#2ecc71;}
+.tabs .tab:nth-child(10){--tc:#3bc0d8;}
+.tabs .tab:nth-child(11){--tc:#e8743b;}
+.tabs .tab:nth-child(12){--tc:#7d5fff;}
+.tabs .tab:nth-child(13){--tc:#2ecc71;}
 .tab.active{opacity:1;box-shadow:0 4px 14px rgba(0,0,0,0.4);transform:translateY(-1px);}
 .tab-content{display:none;}
 .tab-content.active{display:block;}
@@ -79,8 +83,14 @@ tr:hover td{background:var(--surface2);}
 #overlay{position:fixed;inset:0;background:rgba(15,17,23,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999;}
 #overlay.hidden{display:none;}
 .spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-#overlay-txt{font-size:14px;color:var(--muted);}
+
+.sync-logo{width:56px;height:56px;border-radius:14px;background:rgba(79,142,247,.15);display:flex;align-items:center;justify-content:center;}
+.sync-logo i{font-size:30px;color:#4f8ef7;}
+#sync-pct{font-size:32px;font-weight:600;color:var(--text);line-height:1;}
+.sync-bar{width:180px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.sync-fill{height:100%;width:0;background:#4f8ef7;border-radius:2px;transition:width .15s linear;}
+.sync-sub{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.sync-sub i{font-size:14px;animation:spin 1.1s linear infinite;}
 
 /* ── Login overlay ── */
 #login-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;}
@@ -226,6 +236,17 @@ tr:hover td{background:var(--surface2);}
 .hrc-tg:hover{background:var(--surface2);}
 
 
+.hrc-table .hrc-f0{position:sticky;left:0;z-index:4;width:34px;min-width:34px;max-width:34px;}
+.hrc-table .hrc-f1{position:sticky;left:34px;z-index:4;min-width:300px;max-width:300px;border-right:2px solid #f5a623;}
+.hrc-table th.hrc-f0,.hrc-table th.hrc-f1{z-index:8;}
+.hrc-table td.hrc-f0,.hrc-table td.hrc-f1{background:var(--surface);}
+.hrc-table .hrc-row-0 td.hrc-f0,.hrc-table .hrc-row-0 td.hrc-f1{background:linear-gradient(rgba(79,142,247,.06),rgba(79,142,247,.06)),var(--surface);}
+.hrc-table .hrc-row-1 td.hrc-f0,.hrc-table .hrc-row-1 td.hrc-f1{background:linear-gradient(rgba(155,109,255,.05),rgba(155,109,255,.05)),var(--surface);}
+.hrc-table .hrc-row-2 td.hrc-f0,.hrc-table .hrc-row-2 td.hrc-f1{background:linear-gradient(rgba(245,166,35,.05),rgba(245,166,35,.05)),var(--surface);}
+.hrc-table tr.hrc-grand td.hrc-f0,.hrc-table tr.hrc-grand td.hrc-f1{background:var(--surface2);}
+.hrc-table tr:hover td.hrc-f0,.hrc-table tr:hover td.hrc-f1{background:var(--surface2);}
+
+
  @keyframes pmrBlueBlink{0%,100%{box-shadow:0 0 0 0 rgba(79,142,247,0.6);}50%{box-shadow:0 0 0 3px rgba(79,142,247,0.35);}}
 @keyframes pmrRowDelayBlink{0%,100%{background:rgba(231,76,60,0.05);}50%{background:rgba(231,76,60,0.18);}}
 tr.pmr-row-delay td.pmr-c0,tr.pmr-row-delay td.pmr-c1,tr.pmr-row-delay td.pmr-c2,tr.pmr-row-delay td.pmr-c3{animation:pmrRowDelayBlink 2.3s ease-in-out infinite;}
@@ -244,15 +265,23 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
 .leaflet-popup-content{font-size:12px;font-family:inherit;}
 .pmr-install::before{content:'*';position:absolute;top:-2px;right:4px;color:#4f8ef7;font-weight:900;font-size:14px;text-shadow:0 0 4px rgba(79,142,247,0.6);}
 
+.pmv-c0{position:sticky;left:0;z-index:4;background:var(--surface);width:170px;min-width:170px;max-width:170px;overflow:hidden;text-overflow:ellipsis;font-weight:500;color:var(--text);}
+.pmv-c1{position:sticky;left:170px;z-index:4;background:var(--surface);width:110px;min-width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;}
+.pmv-c2{position:sticky;left:280px;z-index:4;background:var(--surface);width:64px;min-width:64px;max-width:64px;text-align:center;border-right:2px solid var(--border2);}
+.pmr-table thead th.pmv-c0,.pmr-table thead th.pmv-c1,.pmr-table thead th.pmv-c2{z-index:6;background:var(--surface2);}
+
 </style>
 </head>
 <body>
 
 <div id="overlay">
-  <div class="spin"></div>
-  <div id="overlay-txt">Connecting to Google Sheets…</div>
+  <div class="sync-logo"><i class="ti ti-layout-dashboard"></i></div>
+  <div id="sync-pct">0%</div>
+  <div class="sync-bar"><div class="sync-fill" id="sync-fill"></div></div>
+  <div class="sync-sub"><i class="ti ti-refresh"></i><span id="overlay-txt">Syncing latest data</span></div>
 </div>
 
+  
 <div id="login-overlay" class="hidden">
   <div class="login-card">
     <div class="login-logo"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToL7ghMGlVSZZldEAR63B8XCpsOUoKx00ATeQzw6OJACIfjw61nHrhpOQ9&s=10" alt="logo" style="height:28px;width:auto;border-radius:6px;"/> Ops Dashboard</div>
@@ -283,16 +312,17 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
 <div class="main" id="main" style="display:none;">
 <div class="tabs">
     <button class="tab active" onclick="switchTab('pov',this)"><i class="ti ti-layout-dashboard"></i> Project Overview</button>
+  <button class="tab" onclick="switchTab('hrc',this)"><i class="ti ti-binary-tree"></i> Hierarchy Report</button>
    <button class="tab" onclick="switchTab('prep',this)"><i class="ti ti-table"></i> Project Report</button>
     <button class="tab" onclick="switchTab('nur',this)"><i class="ti ti-alert-triangle"></i> Not Updated Report</button>
     <button class="tab" onclick="switchTab('proj',this)"><i class="ti ti-building-skyscraper"></i> Project Summary</button>
     <button class="tab" onclick="switchTab('rpt',this)"><i class="ti ti-chart-pie"></i> Reports</button>
-    <button class="tab" onclick="switchTab('hrc',this)"><i class="ti ti-binary-tree"></i> Hierarchy Report</button>
+    <button class="tab" onclick="switchTab('pmv',this)"><i class="ti ti-user-search"></i> PM Review</button>
+    <button class="tab" onclick="switchTab('iss',this)"><i class="ti ti-bug"></i> Issue Tracker</button>
     <button class="tab" onclick="switchTab('pmr',this)"><i class="ti ti-calendar-month"></i> Project wise Monthly report</button>
     <button class="tab" onclick="switchTab('pemr',this)"><i class="ti ti-user-check"></i> PE Monthly Report</button>
     <button class="tab" onclick="switchTab('vmr',this)"><i class="ti ti-building-store"></i> Vendor Monthly Report</button>
    <button class="tab" onclick="switchTab('map',this)"><i class="ti ti-map-2"></i> Project Map</button>
-    <button class="tab" onclick="switchTab('cmp',this)"><i class="ti ti-git-compare"></i> Count Compare</button>
   </div>
 
   <!-- PROJECT OVERVIEW TAB -->
@@ -538,11 +568,11 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
     </div>
   </div>
 
-  <!-- HIERARCHY REPORT TAB -->
+  <!-- HIERARCHY REPORT TAB -->  <!-- HIERARCHY REPORT TAB -->
   <div id="tab-hrc" class="tab-content">
     <div class="pe-filter-bar">
       <div class="pe-filter-group"><label>Month</label><select id="hrc-f-month" onchange="onHRCMonthChange()"></select></div>
-<div class="pe-filter-group"><label>Week</label>
+      <div class="pe-filter-group"><label>Week</label>
         <select id="hrc-f-week" onchange="onHRCWeekChange()">
           <option value="">All Weeks</option>
           <option value="1">Week 1 (1–7)</option>
@@ -555,6 +585,15 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
       <div class="pe-filter-group"><label>Date</label>
         <select id="hrc-f-date" onchange="onHRCDateChange()"><option value="">All Days</option></select>
       </div>
+      <div class="pe-fdivider"></div>
+      <div class="pe-filter-group"><label>City</label><div class="pov-ms" id="hrc-ms-city"></div></div>
+      <div class="pe-filter-group"><label>Cluster Head</label><div class="pov-ms" id="hrc-ms-cluster"></div></div>
+      <div class="pe-filter-group"><label>City Manager</label><div class="pov-ms" id="hrc-ms-citymgr"></div></div>
+      <div class="pe-filter-group"><label>PE</label><div class="pov-ms" id="hrc-ms-pe"></div></div>
+      <div class="pe-filter-group"><label>Project Status</label><div class="pov-ms" id="hrc-ms-status"></div></div>
+      <div class="pe-filter-group"><label>Size Category</label><div class="pov-ms" id="hrc-ms-sizecat"></div></div>
+      <div class="pe-filter-group"><label>Delay</label><div class="pov-ms" id="hrc-ms-delay"></div></div>
+      <div class="pe-filter-group"><label>Aging</label><div class="pov-ms" id="hrc-ms-aging"></div></div>
       <div class="pe-fdivider"></div>
       <div class="pe-filter-actions">
         <span class="spacer"></span>
@@ -570,6 +609,67 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
       <div class="card" style="padding:0;overflow:hidden;">
         <div class="table-wrap" style="max-height:78vh;overflow:auto;"><table class="hrc-table"><thead id="hrc-head"></thead><tbody id="hrc-body"></tbody></table></div>
       </div>
+    </div>
+  </div>
+
+
+
+    <!-- PM REVIEW TAB -->
+  <div id="tab-pmv" class="tab-content">
+    <div class="pe-filter-bar">
+      <div class="pe-filter-group"><label>Month</label><select id="pmv-f-month" onchange="buildPMV()"></select></div>
+      <div class="pe-filter-group"><label>Week</label>
+        <select id="pmv-f-week" onchange="buildPMV()">
+          <option value="">All Weeks</option>
+          <option value="1">Week 1 (1–7)</option>
+          <option value="2">Week 2 (8–14)</option>
+          <option value="3">Week 3 (15–21)</option>
+          <option value="4">Week 4 (22–28)</option>
+          <option value="5">Week 5 (29–end)</option>
+        </select>
+      </div>
+      <div class="pe-filter-group"><label>City</label><div class="pov-ms" id="pmv-ms-city"></div></div>
+      <div class="pe-filter-group"><label>PM</label><div class="pov-ms" id="pmv-ms-pm"></div></div>
+      <div class="pe-fdivider"></div>
+      <div class="pe-filter-actions"><span class="spacer"></span><button class="pe-clr-btn" onclick="clearPMVFilters()"><i class="ti ti-x" style="font-size:12px;"></i> Clear Filters</button></div>
+    </div>
+    <div style="padding:16px 24px 24px;">
+      <div class="section-title">PM Review <span style="text-transform:none;font-weight:400;color:var(--muted);font-size:12px;margin-left:6px;">City Manager = PM · click a date for day summary · click a PM name for monthly report · click a cell for project list</span></div>
+      <div class="pmr-legend" id="pmv-legend"></div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="table-wrap pmr-wrap"><table class="pmr-table"><thead id="pmv-head"></thead><tbody id="pmv-body"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+
+
+    <!-- ISSUE TRACKER TAB -->
+  <div id="tab-iss" class="tab-content">
+    <div class="pe-filter-bar">
+      <div class="pe-filter-group"><label>City</label><div class="pov-ms" id="iss-ms-city"></div></div>
+      <div class="pe-filter-group"><label>PM</label><div class="pov-ms" id="iss-ms-pm"></div></div>
+      <div class="pe-filter-group"><label>Status</label><div class="pov-ms" id="iss-ms-status"></div></div>
+      <div class="pe-filter-group"><label>Size Category</label><div class="pov-ms" id="iss-ms-size"></div></div>
+      <div class="pe-fdivider"></div>
+      <div class="pe-filter-actions"><span class="spacer"></span><button class="pe-clr-btn" onclick="clearISSFilters()"><i class="ti ti-x" style="font-size:12px;"></i> Clear Filters</button></div>
+    </div>
+    <div style="padding:16px 24px 24px;">
+      <div class="section-title">Issue Tracker <span style="text-transform:none;font-weight:400;color:var(--muted);font-size:12px;margin-left:6px;">CT Daily Review Tracker · click any card / number for the project list</span></div>
+      <div id="iss-note"></div>
+      <div class="metrics" id="iss-metrics" style="grid-template-columns:repeat(4,minmax(110px,1fr)) minmax(250px,1.6fr);align-items:stretch;"></div>
+
+      <div class="charts-grid" style="grid-template-columns:1fr 1fr 1.5fr;align-items:start;">
+        <div class="card"><div class="card-title"><i class="ti ti-list-details"></i> Status-wise <span style="font-size:11px;font-weight:400;">· click for City / Size split</span></div><div id="iss-status"></div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-clock-exclamation"></i> Aging <span style="font-size:11px;font-weight:400;">· open issues only</span></div><div id="iss-aging"></div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-user-cog"></i> PM-wise Issues</div><div class="table-wrap" id="iss-pm"></div></div>
+      </div>
+
+      
+      <div class="card"><div class="card-title"><i class="ti ti-table"></i> Issue Detail <span style="font-size:11px;font-weight:400;">· one row per project · click + to see its issues</span>
+  <span style="margin-left:auto;display:flex;gap:8px;"><button class="pe-clr-btn" onclick="issExpandAll()"><i class="ti ti-square-plus" style="font-size:12px;"></i> Expand all</button><button class="pe-clr-btn" onclick="issCollapseAll()"><i class="ti ti-square-minus" style="font-size:12px;"></i> Collapse all</button></span></div>
+        <div class="table-wrap" style="max-height:70vh;overflow:auto;"><table><thead id="iss-head"></thead><tbody id="iss-body"></tbody></table></div></div>
+      
     </div>
   </div>
 
@@ -824,15 +924,21 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
 // ── Config ────────────────────────────────────────────────────
 const SID='1NuqbG_4a3bGS4Wd6dKvxsP0FN2tE6yMupkQ-1fYDQNA';
 const SHEETS={
-  lead:'0',          // Lead Tracker
+  lead:'0',
   pe:'819368336',
   att:'1499073248',
   tbt:'1641565259',
   dpr:'351032265',
   workplan:'204658067',
-  vendor:'2088990270', // Vendor data
-  daily:'1404385043',  // Daily Activity (leave tracker)
-  cred:'1939441300'    // Cred (login) sheet
+  vendor:'2088990270',
+  daily:'1404385043',
+  cred:'1939441300'     // Cred (login) sheet
+};
+
+const SID2='17GaCzIEOmyx7EtcwonVLnlkgROrtujyPqpv5APsbSek';
+const SHEETS2={
+  pmr:'2095460976',    // PM Review
+  issue:'419894140'    // CT Daily Review Tracker
 };
 
 let D={
@@ -844,16 +950,18 @@ let D={
   workplan:{h:[],r:[]},
   vendor:{h:[],r:[]},
   daily:{h:[],r:[]},
-  cred:{h:[],r:[]}
+  cred:{h:[],r:[]},
+  pmr:{h:[],r:[]},
+  issue:{h:[],r:[]}
 };
 
 // ── Helpers ───────────────────────────────────────────────────
-const csvUrl=gid=>`https://docs.google.com/spreadsheets/d/${SID}/export?format=csv&gid=${gid}`;
+const csvUrl=(gid,sid)=>`https://docs.google.com/spreadsheets/d/${sid||SID}/export?format=csv&gid=${gid}`;
 function ci(headers,...kws){for(const kw of kws){const i=headers.findIndex(h=>h.toLowerCase().replace(/[\s\-_]/g,'').includes(kw.toLowerCase().replace(/[\s\-_]/g,'')));if(i>=0)return i;}return -1;}
 const v=(row,i)=>i>=0?(row[i]||'').trim():'';
-function parseSheet(gid){return new Promise((res,rej)=>{
+function parseSheet(gid,sid){return new Promise((res,rej)=>{
   const timer=setTimeout(()=>rej(new Error('Timeout (>30s) loading sheet '+gid)),30000);
-  Papa.parse(csvUrl(gid),{download:true,header:false,skipEmptyLines:true,
+  Papa.parse(csvUrl(gid,sid),{download:true,header:false,skipEmptyLines:true,
     complete:r=>{clearTimeout(timer);if(!r.data.length)return rej('Empty sheet '+gid);
       const first=String((r.data[0]||[])[0]||'').trim().toLowerCase();
       if(first.startsWith('<!')||first.startsWith('<html')||first.startsWith('<!doctype'))return rej(new Error('Sheet '+gid+' is not publicly accessible (got HTML, not CSV)'));
@@ -861,6 +969,23 @@ function parseSheet(gid){return new Promise((res,rej)=>{
     error:e=>{clearTimeout(timer);rej(e);}});
 });}
 function setOverlay(txt){document.getElementById('overlay-txt').textContent=txt;}
+
+  let _syncShown=0,_syncTarget=0,_syncTimer=null;
+function setProgress(done,total){
+  _syncTarget=total?Math.round(done/total*100):0;
+  if(_syncTimer)return;
+  _syncTimer=setInterval(()=>{
+    if(_syncShown<_syncTarget)_syncShown=Math.min(_syncTarget,_syncShown+2);
+    else if(_syncShown>_syncTarget)_syncShown=_syncTarget;
+    const el=document.getElementById('sync-pct');if(el)el.textContent=_syncShown+'%';
+    const fl=document.getElementById('sync-fill');if(fl)fl.style.width=_syncShown+'%';
+    if(_syncShown===_syncTarget)
+    {clearInterval(_syncTimer);_syncTimer=null;}
+  },20);
+}
+function resetProgress(){_syncShown=0;_syncTarget=0;if(_syncTimer){clearInterval(_syncTimer);_syncTimer=null;}const el=document.getElementById('sync-pct');if(el)el.textContent='0%';}
+
+  
 function switchTab(name,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('tab-'+name).classList.add('active');if(name==='map'){setTimeout(()=>{buildProjMap();if(_projMap)_projMap.invalidateSize();},50);}
 if(name==='nur'){buildNUR();}
 if(name==='cmp'){buildCMP();}}
@@ -920,13 +1045,17 @@ async function loadAll(){
   document.querySelector('.btn-refresh').classList.add('spinning');
   try{
     // Load all sheets in parallel (incl. cred)
-    const entries=Object.entries(SHEETS);
+    const entries=[...Object.entries(SHEETS).map(([k,g])=>[k,g,SID]),...Object.entries(SHEETS2).map(([k,g])=>[k,g,SID2])];
     let loaded=0;
-    setOverlay(`Loading data… 0/${entries.length}`);
-    await Promise.all(entries.map(async ([key,gid])=>{
-      try{const rows=await parseSheet(gid);D[key].h=rows[0]||[];D[key].r=rows.slice(1);}
+    resetProgress();
+    setOverlay('Syncing dashboard…');
+    setProgress(0,entries.length);
+
+    
+    await Promise.all(entries.map(async ([key,gid,sid])=>{
+      try{const rows=await parseSheet(gid,sid);D[key].h=rows[0]||[];D[key].r=rows.slice(1);}
       catch(e){console.warn(`Failed: ${key}`,e);D[key].h=[];D[key].r=[];}
-      loaded++;setOverlay(`Loading data… ${loaded}/${entries.length}`);
+      loaded++;setProgress(loaded,entries.length);
     }));
     document.getElementById('status-badge').innerHTML='<i class="ti ti-circle-check" style="font-size:10px"></i> Live';
     document.getElementById('status-badge').style.cssText='font-size:11px;padding:4px 12px;border-radius:20px;background:rgba(52,201,138,0.15);color:#34c98a;border:1px solid rgba(52,201,138,0.3);';
@@ -1051,7 +1180,7 @@ function enterDashboard(){
   _povCache={};
   buildProjFilters();
  populatePOVFilters(); populateRPTFilters(); populatePMRFilters();
-  populatePEMRFilters(); populateVMRFilters(); populateHRCFilters(); populateNURFilters();
+    populatePEMRFilters(); populateVMRFilters(); populateHRCFilters(); populateNURFilters(); populatePMVFilters(); populateISSFilters();
   buildAll();
   applyTabVisibility();
   // PE users land on their PE Monthly Report (calendar + summary)
@@ -1077,7 +1206,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 });
 
-function buildAll(){buildPOV();buildRPT();buildPMR();buildPEMR();buildVMR();buildHRC();}
+  function buildAll(){buildPOV();buildRPT();buildPMR();buildPEMR();buildVMR();buildHRC();buildPMV();buildISS();}
 
 // ── PE ────────────────────────────────────────────────────────
 function populatePEFilters(){
@@ -4611,7 +4740,8 @@ function populateHRCFilters(){
     keys.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=months[k].toLocaleDateString('en-IN',{month:'long',year:'numeric'});msel.appendChild(o);});
     if(cur)msel.value=cur; else if(keys.length)msel.value=keys[0];
   }
-  populateHRCDates();
+populateHRCDates();
+  hrcBuildMS();
 }
 
 // Fill the Date dropdown with the days present in attendance for the selected month
@@ -4625,6 +4755,9 @@ function populateHRCDates(){
   const [yy,mm]=monthVal.split('-').map(Number);
   const present=new Set();
   D.att.r.forEach(x=>{const d=parseDate(v(x,ATT_COL.DATE));if(d&&d.getFullYear()===yy&&d.getMonth()===mm-1)present.add(d.getDate());});
+  const _now=new Date();
+  const isCurMonth=(yy===_now.getFullYear()&&mm===_now.getMonth()+1);
+  if(isCurMonth)present.add(_now.getDate());
   const wd=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   [...present].sort((a,b)=>a-b).forEach(dd=>{
     const dt=new Date(yy,mm-1,dd);
@@ -4632,20 +4765,199 @@ function populateHRCDates(){
     o.textContent=dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+' · '+wd[dt.getDay()];
     dsel.appendChild(o);
   });
-  if(cur&&present.has(Number(cur)))dsel.value=cur; else dsel.value='';
+  if(cur&&present.has(Number(cur)))dsel.value=cur;
+  else dsel.value=isCurMonth?String(_now.getDate()):'';
 }
 
 function onHRCMonthChange(){ populateHRCDates(); buildHRC(); }
 // Week and Date are mutually exclusive (a single day overrides the week range)
 function onHRCWeekChange(){ const d=document.getElementById('hrc-f-date'); if(d&&document.getElementById('hrc-f-week').value)d.value=''; buildHRC(); }
 function onHRCDateChange(){ const w=document.getElementById('hrc-f-week'); if(w&&document.getElementById('hrc-f-date').value)w.value=''; buildHRC(); }
+
+
+  // ── HRC multi-select filters ──────────────────────────────────
+const HRC_MS_CFG={
+  city:   {all:'All Cities',    ph:'Search cities…'},
+  cluster:{all:'All Clusters',  ph:'Search clusters…'},
+  citymgr:{all:'All City Mgrs', ph:'Search city managers…'},
+  pe:     {all:'All PEs',       ph:'Search PEs…'},
+  status: {all:'All Statuses',  ph:'Search status…'},
+  sizecat:{all:'All Sizes',     ph:'Search size…'},
+  delay:  {all:'All Delay',     ph:'Search delay…'},
+  aging:  {all:'All Aging',     ph:'Search aging…'}
+};
+const HRC_DELAY_OPTS=['On Time','No PO data','Delayed 1–5 days','Delayed 6–10 days','Delayed 11–20 days','Delayed 21–30 days','Delayed 31–50 days','Delayed 51–100 days','Delayed 101–200 days','Delayed >200 days'];
+let _hrcMS={city:new Set(),cluster:new Set(),citymgr:new Set(),pe:new Set(),status:new Set(),sizecat:new Set(),delay:new Set(),aging:new Set()};
+let _hrcAll={city:[],cluster:[],citymgr:[],pe:[],status:POV_STATUSES.slice(),sizecat:SIZE_CATEGORIES.slice(),delay:HRC_DELAY_OPTS.slice(),aging:AGING_LABELS.slice()};
+
+function hrcBuildMS(){
+  const sets={city:new Set(),cluster:new Set(),citymgr:new Set(),pe:new Set()};
+  const colOf={city:'CITY',cluster:'CLUSTER',citymgr:'CITYMGR',pe:'PE'};
+  D.lead.r.forEach(x=>{if(!lv(x,LEAD_COL.PID))return;Object.keys(sets).forEach(k=>{const val=lv(x,LEAD_COL[colOf[k]]);if(val)sets[k].add(val);});});
+  Object.keys(sets).forEach(k=>{_hrcAll[k]=[...sets[k]].sort((a,b)=>a.localeCompare(b));_hrcMS[k]=new Set([..._hrcMS[k]].filter(v=>sets[k].has(v)));});
+  Object.keys(HRC_MS_CFG).forEach(key=>{
+    const host=document.getElementById('hrc-ms-'+key);if(!host)return;
+    const cfg=HRC_MS_CFG[key];
+    host.innerHTML=`
+      <div class="pov-ms-control" onclick="hrcToggleMS('${key}')"><span class="pov-ms-text placeholder" id="hrc-ms-text-${key}">${cfg.all}</span><i class="ti ti-chevron-down"></i></div>
+      <div class="pov-ms-panel">
+        <input type="text" class="pov-ms-search" id="hrc-ms-search-${key}" placeholder="${cfg.ph}" oninput="hrcRenderOpts('${key}')" onclick="event.stopPropagation()"/>
+        <div class="pov-ms-actions"><button onclick="event.stopPropagation();hrcSelectAll('${key}')">Select all</button><button onclick="event.stopPropagation();hrcClearMS('${key}')">Clear</button></div>
+        <div class="pov-ms-options" id="hrc-ms-options-${key}"></div>
+      </div>`;
+    hrcRenderOpts(key);hrcUpdateCtl(key);
+  });
+}
+function hrcRenderOpts(key){
+  const box=document.getElementById('hrc-ms-options-'+key);if(!box)return;
+  const q=((document.getElementById('hrc-ms-search-'+key)||{}).value||'').trim().toLowerCase();
+  const html=_hrcAll[key].map((o,i)=>({o,i})).filter(({o})=>!q||o.toLowerCase().includes(q)).map(({o,i})=>
+    `<label class="pov-ms-opt" onclick="event.stopPropagation()"><input type="checkbox" ${_hrcMS[key].has(o)?'checked':''} onchange="hrcToggleOpt('${key}',${i})"/><span class="lbl" title="${o.replace(/"/g,'&quot;')}">${pemrEsc(o)}</span></label>`).join('');
+  box.innerHTML=html||'<div class="pov-ms-empty">No matches</div>';
+}
+function hrcToggleOpt(key,i){const o=_hrcAll[key][i];if(_hrcMS[key].has(o))_hrcMS[key].delete(o);else _hrcMS[key].add(o);hrcUpdateCtl(key);buildHRC();}
+function hrcSelectAll(key){const q=((document.getElementById('hrc-ms-search-'+key)||{}).value||'').trim().toLowerCase();_hrcAll[key].filter(o=>!q||o.toLowerCase().includes(q)).forEach(o=>_hrcMS[key].add(o));hrcRenderOpts(key);hrcUpdateCtl(key);buildHRC();}
+function hrcClearMS(key){_hrcMS[key].clear();hrcRenderOpts(key);hrcUpdateCtl(key);buildHRC();}
+function hrcUpdateCtl(key){
+  const t=document.getElementById('hrc-ms-text-'+key);if(!t)return;
+  const s=_hrcMS[key];
+  if(!s.size){t.textContent=HRC_MS_CFG[key].all;t.classList.add('placeholder');}
+  else if(s.size===1){t.textContent=[...s][0];t.classList.remove('placeholder');}
+  else{t.textContent=s.size+' selected';t.classList.remove('placeholder');}
+}
+function hrcToggleMS(key){
+  const host=document.getElementById('hrc-ms-'+key);if(!host)return;
+  const was=host.classList.contains('open');
+  document.querySelectorAll('.pov-ms.open').forEach(el=>el.classList.remove('open'));
+  if(!was){host.classList.add('open');const s=document.getElementById('hrc-ms-search-'+key);if(s){s.value='';hrcRenderOpts(key);setTimeout(()=>s.focus(),0);}}
+}
+
+function hrcDelayOf(x){
+  const d=povComputeDelay(x);
+  if(!d)return 'No PO data';
+  if(d.delayBy<=0||d.isDone)return 'On Time';
+  for(let i=0;i<DELAY_BUCKETS.length;i++){const [lo,hi]=DELAY_BUCKETS[i];if(d.delayBy>=lo&&d.delayBy<=hi)return 'Delayed '+DELAY_LABELS[i]+' days';}
+  return 'On Time';
+}
+// Mutually exclusive bucket for every lead
+function hrcBucket(x,asOf){
+  const today=pmvDMs(new Date());
+  const h=povHoldInfo(x);
+  if(asOf==null||asOf>=today){
+    if(h.cancelled||h.onHold)return 'ch';
+    if(!lv(x,LEAD_COL.PE))return 'na';
+    if(!vendorFinalizeDate(x))return 'vnf';
+    const m=computeProjectMetrics(lv(x,LEAD_COL.PID));
+    if(m.status==='done')return 'done';
+    if(m.installStatus==='done')return 'handover';
+    return 'ongoing';
+  }
+  if(h.cancelled&&(h.cancelDate?pmvDMs(h.cancelDate):0)<=asOf)return 'ch';
+  if(h.holdIntervals.some(iv=>iv.start&&pmvDMs(iv.start)<=asOf&&(!iv.end||pmvDMs(iv.end)>=asOf)))return 'ch';
+  if(!lv(x,LEAD_COL.PE))return 'na';
+  const vd=vendorFinalizeDate(x);
+  if(!vd||pmvDMs(vd)>asOf)return 'vnf';
+  const m=computeProjectMetrics(lv(x,LEAD_COL.PID));
+  if(m.status==='done'&&(!m.lastAttDate||pmvDMs(m.lastAttDate)<=asOf))return 'done';
+  if(m.installStatus==='done'&&(!m.endDate||pmvDMs(m.endDate)<=asOf))return 'handover';
+  return 'ongoing';
+}
+
+  
+function hrcRowPasses(x){
+  const f=_hrcMS;
+  if(f.city.size&&!f.city.has(lv(x,LEAD_COL.CITY)))return false;
+  if(f.cluster.size&&!f.cluster.has(lv(x,LEAD_COL.CLUSTER)))return false;
+  if(f.citymgr.size&&!f.citymgr.has(lv(x,LEAD_COL.CITYMGR)))return false;
+  if(f.pe.size&&!f.pe.has(lv(x,LEAD_COL.PE)))return false;
+  if(f.status.size&&!povProjectStatuses(x).some(t=>f.status.has(t)))return false;
+  if(f.sizecat.size&&!f.sizecat.has(sizeCategoryOf(x)))return false;
+  if(f.delay.size&&!f.delay.has(hrcDelayOf(x)))return false;
+  if(f.aging.size&&!f.aging.has(povAgingOf(x)))return false;
+  return true;
+}
+
 function clearHRCFilters(){
   const m=document.getElementById('hrc-f-month');if(m&&m.options.length)m.selectedIndex=Math.min(1,m.options.length-1);
   const w=document.getElementById('hrc-f-week');if(w)w.value='';
-  populateHRCDates();
   const dd=document.getElementById('hrc-f-date');if(dd)dd.value='';
+  populateHRCDates();
+  Object.keys(_hrcMS).forEach(k=>{_hrcMS[k].clear();hrcRenderOpts(k);hrcUpdateCtl(k);});
   _hrcExpanded.clear();
   buildHRC();
+}
+
+
+  // PM Review status index: dayMs|projectId -> 'done' | 'issue' | 'pend'
+function hrcReviewIndex(){
+  const h=D.pmr.h,rev={};
+  const fx=(names,def)=>{for(const n of names){const i=h.findIndex(z=>String(z).toLowerCase().replace(/[^a-z0-9]/g,'')===n);if(i>=0)return i;}return def;};
+  const iD=fx(['date'],0),iLead=fx(['leadid'],1),iP=fx(['projectid'],2),iIC=fx(['icok'],4),iMat=fx(['materialissue'],5);
+  const issSet=issueKeySet();
+  const rank={done:2,pend:1};
+  D.pmr.r.forEach(x=>{
+    const d=povParseHoldDate(v(x,iD)),pid=v(x,iP);if(!d||!pid)return;
+    const ic=v(x,iIC),mat=v(x,iMat),lead=v(x,iLead);
+    let s='pend';
+    if(!ic)s='pend';
+    else if(/^yes$/i.test(ic)&&/^no$/i.test(mat))s='done';
+    else if(lead&&issSet.has(lead+'|'+pmvDMs(d)))s='done';
+    const k=pmvDMs(d)+'|'+pid;
+    if(!rev[k]||rank[s]>rank[rev[k]])rev[k]=s;
+  });
+  return rev;
+}
+  
+// '' = not expected to be reviewed in this window
+function hrcReviewStatusOf(x,rev,rvDays){
+  const pid=lv(x,LEAD_COL.PID);
+  if(!lv(x,LEAD_COL.PE))return '';
+  const vd=vendorFinalizeDate(x);if(!vd)return '';
+  const vMs=pmvDMs(vd);
+  const hi=povHoldInfo(x),m=computeProjectMetrics(pid);
+  const todayMs=pmvDMs(new Date());
+  const holds=hi.holdIntervals.filter(iv=>iv.start).map(iv=>[pmvDMs(iv.start),iv.end?pmvDMs(iv.end):todayMs]);
+  const cancelMs=hi.cancelled?(hi.cancelDate?pmvDMs(hi.cancelDate):0):null;
+  let closeMs=null;
+  if(m.installStatus==='done'&&m.endDate)closeMs=pmvDMs(m.endDate);
+  else if(m.status==='done'&&m.lastAttDate)closeMs=pmvDMs(m.lastAttDate);
+  let tracked=false,last=null;
+  for(const ms of rvDays){
+    if(ms<vMs)continue;
+    if(cancelMs!==null&&ms>=cancelMs)continue;
+    if(holds.some(iv=>ms>=iv[0]&&ms<=iv[1]))continue;
+    if(closeMs!==null&&ms>closeMs)continue;
+    tracked=true;
+    const r=rev[ms+'|'+pid];if(r)last=r;
+  }
+  if(!tracked)return '';
+  return last||'pend';
+}
+
+
+function hrcReviewStatusOf(x,rev,rvDays){
+  const pid=lv(x,LEAD_COL.PID);
+  if(!lv(x,LEAD_COL.PE))return '';
+  const vd=vendorFinalizeDate(x);if(!vd)return '';
+  const vMs=pmvDMs(vd);
+  const hi=povHoldInfo(x),m=computeProjectMetrics(pid);
+  const todayMs=pmvDMs(new Date());
+  const holds=hi.holdIntervals.filter(iv=>iv.start).map(iv=>[pmvDMs(iv.start),iv.end?pmvDMs(iv.end):todayMs]);
+  const cancelMs=hi.cancelled?(hi.cancelDate?pmvDMs(hi.cancelDate):0):null;
+  let closeMs=null;
+  if(m.installStatus==='done'&&m.endDate)closeMs=pmvDMs(m.endDate);
+  else if(m.status==='done'&&m.lastAttDate)closeMs=pmvDMs(m.lastAttDate);
+  let tracked=false,last=null;
+  for(const ms of rvDays){
+    if(ms<vMs)continue;
+    if(cancelMs!==null&&ms>=cancelMs)continue;
+    if(holds.some(iv=>ms>=iv[0]&&ms<=iv[1]))continue;
+    if(closeMs!==null&&ms>closeMs)continue;
+    tracked=true;
+    const r=rev[ms+'|'+pid];if(r)last=r;
+  }
+  if(!tracked)return '';
+  return last||'pend';
 }
 
 function buildHRC(){
@@ -4655,18 +4967,17 @@ function buildHRC(){
   const head=document.getElementById('hrc-head'),body=document.getElementById('hrc-body');
   if(!head||!body)return;
 
-  // Time bounds (optional)
   let yy=null,mm=null,dayStart=null,dayEnd=null;
   if(monthVal){
     [yy,mm]=monthVal.split('-').map(Number);
-    const daysInMonth=new Date(yy,mm,0).getDate();
-    dayStart=1;dayEnd=daysInMonth;
-    if(dateVal){const dd=Number(dateVal);dayStart=dd;dayEnd=dd;}        // single day overrides week
-    else if(weekVal){const w=Number(weekVal);dayStart=(w-1)*7+1;dayEnd=Math.min(w*7,daysInMonth);}
+    const dim=new Date(yy,mm,0).getDate();
+    dayStart=1;dayEnd=dim;
+    if(dateVal){dayStart=dayEnd=Number(dateVal);}
+    else if(weekVal){const w=Number(weekVal);dayStart=(w-1)*7+1;dayEnd=Math.min(w*7,dim);}
   }
 
-  // Per-project attendance stats in window
-  const projAtt={}; // pid -> {onsite, without, noact, hasAny}
+  const prio={'onsite visit':4,'without visit update':3,'no activity':2};
+  const projAtt={};
   D.att.r.forEach(x=>{
     const pid=v(x,ATT_COL.PID),d=parseDate(v(x,ATT_COL.DATE));
     if(!pid||!d)return;
@@ -4674,111 +4985,322 @@ function buildHRC(){
       if(d.getFullYear()!==yy||d.getMonth()!==mm-1)return;
       const dd=d.getDate();if(dd<dayStart||dd>dayEnd)return;
     }
-    if(!projAtt[pid])projAtt[pid]={onsite:0,without:0,noact:0,hasAny:false};
-    projAtt[pid].hasAny=true;
     const st=v(x,ATT_COL.M).toLowerCase();
-    if(st==='onsite visit')projAtt[pid].onsite++;
-    else if(st==='without visit update')projAtt[pid].without++;
-    else if(st==='no activity')projAtt[pid].noact++;
+    const p=prio[st]||1;
+    if(!projAtt[pid]||p>projAtt[pid].p)projAtt[pid]={p,st};
   });
 
-  // Hierarchy: cluster → cm → pe → projects[]
+  const KEYS=['total','inst','done','handover','ch','na','vnf','tpending','ongoing','upd','noact','onsite','without','notupd','delayed','rvtotal','rvdone','rvpend','istoday','istotal','isdone','ispend'];
+  const _todayMs=pmvDMs(new Date());
+
+
+    let asOf=_todayMs;
+  if(yy!==null)asOf=Math.min(_todayMs,new Date(yy,mm-1,dayEnd).getTime());
+  const iCHA=ci(D.lead.h,'Clusterheadassignedon','clusterheadassigned');
+
+  
+  const rvDays=[];
+  if(yy!==null){
+    for(let d=dayStart;d<=dayEnd;d++){const dt=new Date(yy,mm-1,d);if(dt.getTime()>_todayMs||dt.getDay()===0)continue;rvDays.push(dt.getTime());}
+  }else{
+    const dt=new Date(_todayMs);if(dt.getDay()===0)dt.setDate(dt.getDate()-1);rvDays.push(dt.getTime());
+  }
+    const rvIdx=hrcReviewIndex(),rvCache={};
+  const issCnt={};
+  const _rStart=(yy!==null)?new Date(yy,mm-1,dayStart).getTime():_todayMs;
+  issBuildRows().forEach(r=>{
+    const rd=r.date?pmvDMs(r.date):null;
+    if(rd!==null&&rd>asOf)return;
+    const o=issCnt[r.pid]=issCnt[r.pid]||{today:0,total:0,done:0,pend:0};
+    o.total++;
+    const doneByThen=r.status==='Completed'&&(!r.endD||pmvDMs(r.endD)<=asOf);
+    if(doneByThen)o.done++;else o.pend++;
+    if(rd!==null&&rd>=_rStart&&rd<=asOf)o.today++;
+  });
+
+  const zeroC=()=>{const o={};KEYS.forEach(k=>o[k]=0);return o;};
+  const sumC=(a,b)=>{KEYS.forEach(k=>a[k]+=b[k]);return a;};
+  const projC=x=>{
+
+
+        const pid=lv(x,LEAD_COL.PID),c=zeroC(),b=hrcBucket(x,asOf);
+    const m=computeProjectMetrics(pid);
+    c.total=1;
+    if(m.installStatus==='done'&&(asOf>=_todayMs||!m.endDate||pmvDMs(m.endDate)<=asOf))c.inst=1;
+    if(asOf>=_todayMs){
+      const dl=povComputeDelay(x);
+      if(dl&&dl.delayBy>0&&!dl.isDone)c.delayed=1;
+    }else{
+      const ps=parseDate(lv(x,37)),pd=parseFloat(lv(x,24))||0;
+      if(ps&&pd&&b!=='done'&&Math.floor((asOf-pmvDMs(ps))/86400000)+1>pd)c.delayed=1;
+    }
+
+    
+    if(b==='done')c.done=1;
+    else if(b==='ch')c.ch=1;
+    else if(b==='na')c.na=1;
+    else if(b==='vnf')c.vnf=1;
+    else if(b==='handover'){c.handover=1;c.tpending=1;}
+    else{
+      c.ongoing=1;c.tpending=1;
+      const a=projAtt[pid];
+      if(a){
+        c.upd=1;
+        if(a.st==='no activity')c.noact=1;
+        else if(a.st==='onsite visit')c.onsite=1;
+        else if(a.st==='without visit update')c.without=1;
+      }else c.notupd=1;
+    }
+    if(!(pid in rvCache))rvCache[pid]=hrcReviewStatusOf(x,rvIdx,rvDays);
+    const rv=rvCache[pid];
+        if(rv){c.rvtotal=1;c['rv'+rv]=1;}
+    const ic=issCnt[pid];
+    if(ic){c.istoday=ic.today;c.istotal=ic.total;c.isdone=ic.done;c.ispend=ic.pend;}
+    return c;
+  };
+  window._hrcProjC=projC;
+
   const tree={};
   D.lead.r.forEach(x=>{
-    const pid=lv(x,LEAD_COL.PID);if(!pid)return;
-    const cluster=lv(x,LEAD_COL.CLUSTER)||'(No Cluster Head)';
+    const pid=lv(x,LEAD_COL.PID);if(!pid||!hrcRowPasses(x))return;
+   if(asOf<_todayMs&&iCHA>=0){const cd=parseDate(lv(x,iCHA));if(cd&&pmvDMs(cd)>asOf)return;}
+    const cl=lv(x,LEAD_COL.CLUSTER)||'(No Cluster Head)';
     const cm=lv(x,LEAD_COL.CITYMGR)||'(No City Manager)';
     const pe=lv(x,LEAD_COL.PE)||'(PE Not Assigned)';
-    const pname=lv(x,LEAD_COL.PNAME)||pid;
-    const city=lv(x,LEAD_COL.CITY)||'—';
-    if(!tree[cluster])tree[cluster]={};
-    if(!tree[cluster][cm])tree[cluster][cm]={};
-    if(!tree[cluster][cm][pe])tree[cluster][cm][pe]={};
-    tree[cluster][cm][pe][pid]={pname,city};
+    ((((tree[cl]=tree[cl]||{})[cm]=tree[cl][cm]||{})[pe]=tree[cl][cm][pe]||{})[pid])={x,pname:lv(x,LEAD_COL.PNAME)||pid,city:lv(x,LEAD_COL.CITY)||'—'};
   });
 
-  // Counters
-// Counters — 'pending' here means "no attendance update"; separately track project-status Completed/Pending
-  const projC=pid=>{
-    const a=projAtt[pid]||{onsite:0,without:0,noact:0,hasAny:false};
-    const m=computeProjectMetrics(pid);
-    return {projects:1,updated:a.hasAny?1:0,pending:a.hasAny?0:1,onsite:a.onsite,without:a.without,noact:a.noact,completed:m.status==='done'?1:0,projPending:m.status==='pending'?1:0,pctSum:m.weightedPct||0};
-  };
-  const sumC=(a,b)=>({projects:a.projects+b.projects,updated:a.updated+b.updated,pending:a.pending+b.pending,onsite:a.onsite+b.onsite,without:a.without+b.without,noact:a.noact+b.noact,completed:a.completed+b.completed,projPending:a.projPending+b.projPending,pctSum:a.pctSum+b.pctSum});
-  const zeroC={projects:0,updated:0,pending:0,onsite:0,without:0,noact:0,completed:0,projPending:0,pctSum:0};
-
-  // Render rows respecting expansion state
-  const rows=[];
+  const rows=[];const grand=zeroC();const grandItems=[];
   Object.keys(tree).sort().forEach(cluster=>{
-    const cKey='c:'+cluster;
-    const cmsObj=tree[cluster];
-    let cCounts={...zeroC};
-    const cmKeys=Object.keys(cmsObj).sort();
-    cmKeys.forEach(cm=>{Object.keys(cmsObj[cm]).forEach(pe=>{Object.keys(cmsObj[cm][pe]).forEach(pid=>{cCounts=sumC(cCounts,projC(pid));});});});
-    const cExpanded=_hrcExpanded.has(cKey);
-    rows.push({level:0,key:cKey,label:cluster,counts:cCounts,expandable:cmKeys.length>0,expanded:cExpanded});
-    if(!cExpanded)return;
+    const cKey='c:'+cluster,cmsObj=tree[cluster],cmKeys=Object.keys(cmsObj).sort(),cC=zeroC(),cI=[];
+    cmKeys.forEach(cm=>Object.keys(cmsObj[cm]).forEach(pe=>Object.keys(cmsObj[cm][pe]).forEach(pid=>{const x=cmsObj[cm][pe][pid].x;sumC(cC,projC(x));cI.push(x);})));
+    sumC(grand,cC);grandItems.push(...cI);
+    const cExp=_hrcExpanded.has(cKey);
+    rows.push({level:0,key:cKey,label:cluster,counts:cC,items:cI,expandable:true,expanded:cExp});
+    if(!cExp)return;
     cmKeys.forEach(cm=>{
-      const cmKey=cKey+'|'+cm;
-      const pesObj=cmsObj[cm];
-      const peKeys=Object.keys(pesObj).sort();
-      let cmCounts={...zeroC};
-      peKeys.forEach(pe=>{Object.keys(pesObj[pe]).forEach(pid=>{cmCounts=sumC(cmCounts,projC(pid));});});
-      const cmExpanded=_hrcExpanded.has(cmKey);
-      rows.push({level:1,key:cmKey,label:cm,counts:cmCounts,expandable:peKeys.length>0,expanded:cmExpanded});
-      if(!cmExpanded)return;
+      const cmKey=cKey+'|'+cm,pesObj=cmsObj[cm],peKeys=Object.keys(pesObj).sort(),cmC=zeroC(),cmI=[];
+      peKeys.forEach(pe=>Object.keys(pesObj[pe]).forEach(pid=>{const x=pesObj[pe][pid].x;sumC(cmC,projC(x));cmI.push(x);}));
+      const cmExp=_hrcExpanded.has(cmKey);
+      rows.push({level:1,key:cmKey,label:cm,counts:cmC,items:cmI,expandable:true,expanded:cmExp});
+      if(!cmExp)return;
       peKeys.forEach(pe=>{
-        const peKey=cmKey+'|'+pe;
-        const pidsObj=pesObj[pe];
-        const pidKeys=Object.keys(pidsObj);
-        let peCounts={...zeroC};
-        pidKeys.forEach(pid=>{peCounts=sumC(peCounts,projC(pid));});
-        const peExpanded=_hrcExpanded.has(peKey);
-        rows.push({level:2,key:peKey,label:pe,counts:peCounts,expandable:pidKeys.length>0,expanded:peExpanded});
-        if(!peExpanded)return;
-        pidKeys.sort((a,b)=>(pidsObj[a].pname||a).localeCompare(pidsObj[b].pname||b)).forEach(pid=>{
-          rows.push({level:3,key:peKey+'|'+pid,label:pidsObj[pid].pname,sublabel:pid+' · '+pidsObj[pid].city,counts:projC(pid),expandable:false,pid});
+        const peKey=cmKey+'|'+pe,pidsObj=pesObj[pe],pidKeys=Object.keys(pidsObj),peC=zeroC(),peI=[];
+        pidKeys.forEach(pid=>{sumC(peC,projC(pidsObj[pid].x));peI.push(pidsObj[pid].x);});
+        const peExp=_hrcExpanded.has(peKey);
+        rows.push({level:2,key:peKey,label:pe,counts:peC,items:peI,expandable:true,expanded:peExp});
+        if(!peExp)return;
+        pidKeys.sort((a,b)=>pidsObj[a].pname.localeCompare(pidsObj[b].pname)).forEach(pid=>{
+          const it=pidsObj[pid];
+          rows.push({level:3,key:peKey+'|'+pid,label:it.pname,sublabel:pid+' · '+it.city,counts:projC(it.x),items:[it.x],expandable:false});
         });
       });
     });
   });
+  window._hrcRowList=rows;
+  window._hrcGrandItems=grandItems;
 
-  head.innerHTML=`<tr><th style="width:34px;text-align:center;">#</th><th>Cluster Head / City Manager / PE / Project</th><th style="text-align:right;">Projects</th><th style="text-align:right;">Updated</th><th style="text-align:right;">Not Updated</th><th style="text-align:right;">Onsite Visit</th><th style="text-align:right;">Without Visit</th><th style="text-align:right;">No Activity</th></tr>`;
+    let pLbl='All Time';
+  if(yy!==null){
+    if(dateVal){
+      const _dt=new Date(yy,mm-1,Number(dateVal));
+      pLbl=(pmvDMs(_dt)===pmvDMs(new Date()))?'Today':_dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    }else if(weekVal){pLbl='Week '+weekVal;}
+    else{pLbl=new Date(yy,mm-1,1).toLocaleDateString('en-IN',{month:'short',year:'numeric'});}
+  }
 
-  if(!rows.length){body.innerHTML='<tr><td colspan="8" class="empty">No data</td></tr>';return;}
+  const AMB='background:linear-gradient(rgba(245,166,35,.16),rgba(245,166,35,.16)),var(--surface2);';
+  const GRN='background:linear-gradient(rgba(52,201,138,.16),rgba(52,201,138,.16)),var(--surface2);';
+  const RED='background:linear-gradient(rgba(231,76,60,.16),rgba(231,76,60,.16)),var(--surface2);';
+  const PNK='background:linear-gradient(rgba(224,81,138,.18),rgba(224,81,138,.18)),var(--surface2);';
+  const BLU='background:linear-gradient(rgba(79,142,247,.16),rgba(79,142,247,.16)),var(--surface2);';
+  const PUR='background:linear-gradient(rgba(155,109,255,.18),rgba(155,109,255,.18)),var(--surface2);';
+  head.innerHTML=
+   `<tr>
+      <th rowspan="2" class="hrc-f0" style="text-align:center;">#</th>
+      <th rowspan="2" class="hrc-f1">Cluster Head / City Manager / PE / Project</th>
+      <th rowspan="2" style="text-align:right;">Total Projects</th>
+      <th rowspan="2" style="text-align:right;">Installation Completed</th>
+      <th rowspan="2" style="text-align:right;">Project Completed</th>
+      <th rowspan="2" style="text-align:right;">Cancelled &amp; Hold</th>
+      <th rowspan="2" style="text-align:right;">Not Assigned</th>
+      <th rowspan="2" style="text-align:right;" title="PE assigned but vendor not finalized">Vendor Not Finalized</th>
+      <th colspan="3" style="text-align:center;color:#f5a623;${AMB}border-left:2px solid #f5a623;border-right:2px solid #f5a623;">Total Pending</th>
+      <th colspan="4" style="text-align:center;color:#34c98a;${GRN}border-right:2px solid #34c98a;">Activity Status · ${pLbl} (On Going Projects)</th>
+      <th rowspan="2" style="text-align:right;color:#e74c3c;${RED}">Not Updated ${pLbl}</th>
+      <th rowspan="2" style="text-align:right;color:#e0518a;${PNK}border-left:2px solid #e0518a;" title="Not completed and past PO timeline">Delayed Projects</th>
+      <th colspan="3" style="text-align:center;color:#4f8ef7;${BLU}border-left:2px solid #4f8ef7;border-right:2px solid #4f8ef7;" title="Projects expected to be reviewed by the PM in the selected period">To Be Reviewed</th>
+      <th colspan="4" style="text-align:center;color:#9b6dff;${PUR}border-left:2px solid #9b6dff;border-right:2px solid #9b6dff;" title="Issues from the CT Daily Review Tracker">Issues</th>
+    </tr>
+    <tr>
+      <th style="text-align:right;top:33px;color:#f5a623;${AMB}border-left:2px solid #f5a623;">Total</th>
+      <th style="text-align:right;top:33px;color:#f5a623;${AMB}" title="PE assigned, vendor finalized, installation not done">On Going</th>
+      <th style="text-align:right;top:33px;color:#f5a623;${AMB}border-right:2px solid #f5a623;" title="Installation done, O&amp;M / handover pending">Handover Pending</th>
+      <th style="text-align:right;top:33px;color:#34c98a;${GRN}">Updated ${pLbl}</th>
+      <th style="text-align:right;top:33px;color:#34c98a;${GRN}">No Activity</th>
+      <th style="text-align:right;top:33px;color:#34c98a;${GRN}">Onsite Visit</th>
+      <th style="text-align:right;top:33px;color:#34c98a;${GRN}border-right:2px solid #34c98a;">Without Visit</th>
+      <th style="text-align:right;top:33px;color:#4f8ef7;${BLU}border-left:2px solid #4f8ef7;">To Be Reviewed</th>
+      <th style="text-align:right;top:33px;color:#34c98a;${BLU}">Reviewed</th>
+      <th style="text-align:right;top:33px;color:#f5a623;${BLU}border-right:2px solid #4f8ef7;">Pending</th>
+      <th style="text-align:right;top:33px;color:#9b6dff;${PUR}border-left:2px solid #9b6dff;">Today's Issues</th>
+      <th style="text-align:right;top:33px;color:#9b6dff;${PUR}">Total Issues</th>
+      <th style="text-align:right;top:33px;color:#34c98a;${PUR}">Resolved</th>
+      <th style="text-align:right;top:33px;color:#f5a623;${PUR}border-right:2px solid #9b6dff;">Pending</th>
+    </tr>`;
+
+  if(!rows.length){body.innerHTML='<tr><td colspan="24" class="empty">No leads match the selected filters</td></tr>';return;}
 
   const levelIcons=['ti-users-group','ti-user-cog','ti-user','ti-building-skyscraper'];
   const levelColors=['#4f8ef7','#9b6dff','#f5a623','#34c98a'];
 
-  let clusterIdx=0;
-  body.innerHTML=rows.map(r=>{
-    const indent=r.level*24;
-    const lvlIcon=levelIcons[r.level];
-    const lvlColor=levelColors[r.level];
-    const fontWeight=r.level===3?500:600;
-    const toggle=r.expandable
-      ? `<button class="hrc-tg" onclick="toggleHRC('${r.key.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" style="color:${lvlColor};">${r.expanded?'−':'+'}</button>`
-      : `<span style="display:inline-block;width:28px;"></span>`;
-    if(r.level===0)clusterIdx++;
-    const numberCell=r.level===0?`<td style="color:var(--muted);text-align:center;font-weight:500;">${clusterIdx}</td>`:`<td></td>`;
-    const labelNode=r.level===3
-      ? `<span style="font-weight:${fontWeight};">${pemrEsc(r.label)}</span>${r.sublabel?`<div style="font-size:10px;color:var(--muted);margin-left:0;margin-top:2px;">${pemrEsc(r.sublabel)}</div>`:''}`
-      : `<span style="font-weight:${fontWeight};">${pemrEsc(r.label)}</span>`;
-    const projCount=r.counts.projects;
+  const cell=(n,color,base,extra,key,rid)=>{
+    const clk=(n&&key)?` onclick="hrcShowList(${rid},'${key}')" title="Click to view projects"`:'';
+    const cur=(n&&key)?'cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;':'';
+    return `<td${clk} style="text-align:right;color:${n?color:'var(--muted)'};font-weight:500;${cur}${extra||''}">${n?`${n}${base?` <span style="color:var(--muted);font-weight:400;font-size:10px;">(${Math.round(n/base*100)}%)</span>`:''}`:'—'}</td>`;
+  };
+  const tA='',tG='',tR='',tP='';
+  const countCells=(c,rid)=>
+    cell(c.total,'var(--text)',0,'font-weight:600;','total',rid)+
+    cell(c.inst,'#34c98a',c.total,'','inst',rid)+
+    cell(c.done,'#0d9488',c.total,'','done',rid)+
+    cell(c.ch,'#9b6dff',c.total,'','ch',rid)+
+    cell(c.na,'#e74c3c',c.total,'','na',rid)+
+    cell(c.vnf,'#8b92b0',c.total,'','vnf',rid)+
+    cell(c.tpending,'#f5a623',c.total,tA+'border-left:2px solid #f5a623;font-weight:700;','tpending',rid)+
+    cell(c.ongoing,'#f5a623',c.tpending,tA,'ongoing',rid)+
+    cell(c.handover,'#3bc0d8',c.tpending,tA+'border-right:2px solid #f5a623;','handover',rid)+
+    cell(c.upd,'#34c98a',c.ongoing,tG+'font-weight:700;','upd',rid)+
+    cell(c.noact,'#f5a623',c.upd,tG,'noact',rid)+
+    cell(c.onsite,'#34c98a',c.upd,tG,'onsite',rid)+
+    cell(c.without,'#3bc0d8',c.upd,tG+'border-right:2px solid #34c98a;','without',rid)+
+    cell(c.notupd,'#e74c3c',c.ongoing,tR,'notupd',rid)+
+    cell(c.delayed,'#e0518a',c.total,tP+'border-left:2px solid #e0518a;font-weight:700;','delayed',rid)+
+    cell(c.rvtotal,'#4f8ef7',0,'border-left:2px solid #4f8ef7;font-weight:700;','rvtotal',rid)+
+    cell(c.rvdone,'#34c98a',c.rvtotal,'font-weight:600;','rvdone',rid)+
+    cell(c.rvpend,'#f5a623',c.rvtotal,'border-right:2px solid #4f8ef7;','rvpend',rid)+
+    cell(c.istoday,'#9b6dff',0,'border-left:2px solid #9b6dff;font-weight:600;','istoday',rid)+
+    cell(c.istotal,'#9b6dff',0,'font-weight:600;','istotal',rid)+
+    cell(c.isdone,'#34c98a',c.istotal,'','isdone',rid)+
+    cell(c.ispend,'#f5a623',c.istotal,'border-right:2px solid #9b6dff;','ispend',rid);
 
-    return `<tr class="hrc-row-${r.level}">
-      ${numberCell}
-      <td style="padding-left:${12+indent}px;"><span style="display:inline-flex;align-items:center;gap:6px;">${toggle}<i class="ti ${lvlIcon}" style="color:${lvlColor};font-size:14px;"></i>${labelNode}</span></td>
-      <td style="text-align:right;font-weight:${fontWeight};color:${lvlColor};">${projCount}</td>
-<td style="text-align:right;color:${r.counts.updated?'#34c98a':'var(--muted)'};font-weight:500;">${r.counts.updated?`${r.counts.updated} <span style="color:var(--muted);font-weight:400;font-size:11px;">(${projCount?Math.round(r.counts.updated/projCount*100):0}%)</span>`:'—'}</td>
-      <td style="text-align:right;color:${r.counts.pending?'#e74c3c':'var(--muted)'};font-weight:500;">${r.counts.pending?`${r.counts.pending} <span style="color:var(--muted);font-weight:400;font-size:11px;">(${projCount?Math.round(r.counts.pending/projCount*100):0}%)</span>`:'—'}</td>
-      <td style="text-align:right;color:${r.counts.onsite?'#34c98a':'var(--muted)'};">${r.counts.onsite?`${r.counts.onsite} <span style="color:var(--muted);font-size:11px;">(${r.counts.updated?Math.round(r.counts.onsite/r.counts.updated*100):0}%)</span>`:'—'}</td>
-      <td style="text-align:right;color:${r.counts.without?'#3bc0d8':'var(--muted)'};">${r.counts.without?`${r.counts.without} <span style="color:var(--muted);font-size:11px;">(${r.counts.updated?Math.round(r.counts.without/r.counts.updated*100):0}%)</span>`:'—'}</td>
-      <td style="text-align:right;color:${r.counts.noact?'#f5a623':'var(--muted)'};">${r.counts.noact?`${r.counts.noact} <span style="color:var(--muted);font-size:11px;">(${r.counts.updated?Math.round(r.counts.noact/r.counts.updated*100):0}%)</span>`:'—'}</td>
-    </tr>`;
+    const grandRow=`<tr class="hrc-grand" style="background:var(--surface2);border-bottom:2px solid var(--border2);"><td class="hrc-f0"></td><td class="hrc-f1" style="font-weight:700;"><i class="ti ti-sum" style="color:var(--accent);margin-right:6px;"></i>Grand Total (all leads in view)</td>${countCells(grand,-1)}</tr>`;
     
+
+  let ci_=0;
+  body.innerHTML=grandRow+rows.map((r,i)=>{
+    const indent=r.level*24,col=levelColors[r.level],fw=r.level===3?500:600;
+    const toggle=r.expandable
+      ?`<button class="hrc-tg" onclick="toggleHRC('${r.key.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" style="color:${col};">${r.expanded?'−':'+'}</button>`
+      :`<span style="display:inline-block;width:28px;"></span>`;
+    if(r.level===0)ci_++;
+    const label=r.level===3
+      ?`<span style="font-weight:${fw};">${pemrEsc(r.label)}</span><div style="font-size:10px;color:var(--muted);margin-top:2px;">${pemrEsc(r.sublabel)}</div>`
+      :`<span style="font-weight:${fw};">${pemrEsc(r.label)}</span>`;
+    return `<tr class="hrc-row-${r.level}">
+            <td class="hrc-f0" style="color:var(--muted);text-align:center;font-weight:500;">${r.level===0?ci_:''}</td>
+      <td class="hrc-f1" style="padding-left:${12+indent}px;"><span style="display:inline-flex;align-items:center;gap:6px;">${toggle}<i class="ti ${levelIcons[r.level]}" style="color:${col};font-size:14px;"></i>${label}</span></td>
+      ${countCells(r.counts,i)}
+    </tr>`;
   }).join('');
 }
+
+  
+
+
+
+  const HRC_METRIC_LABELS={
+  total:'Total Projects',inst:'Installation Completed',done:'Project Completed',ch:'Cancelled & Hold',
+  na:'Not Assigned',vnf:'Vendor Not Finalized',tpending:'Total Pending',ongoing:'On Going',
+  handover:'Handover Pending',upd:'Activity Updated',noact:'No Activity',onsite:'Onsite Visit',
+      without:'Without Visit Update',notupd:'Not Updated',delayed:'Delayed Projects',rvtotal:'To Be Reviewed',rvdone:'Reviewed',rvpend:'Review Pending',istoday:"Today's Issues",istotal:'Total Issues',isdone:'Resolved Issues',ispend:'Pending Issues'
+};
+
+function hrcShowList(rid,key){
+  const src=rid<0?{label:'Grand Total',items:window._hrcGrandItems||[]}:(window._hrcRowList||[])[rid];
+  const pc=window._hrcProjC;
+   if(!src||!pc)return;
+    const showIss=/^(rv|is)/.test(key);
+  window._hrcLast=[rid,key];
+  const issBy={};
+  if(showIss)issBuildRows().forEach(r=>{(issBy[r.pid]=issBy[r.pid]||[]).push(r);});
+  const issCell=x=>{
+    const l=issBy[lv(x,LEAD_COL.PID)]||[];
+    if(!l.length)return '<span style="color:var(--muted);font-size:11px;">No issue logged</span>';
+    return l.slice().sort((a,b)=>(b.days||0)-(a.days||0)).slice(0,4).map(r=>{
+      const c=ISS_COL[r.status]||'#8b92b0';
+      const age=r.days===null?'Closed':r.days+'d';
+      return `<div style="margin-bottom:5px;"><span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;white-space:nowrap;">${r.status}</span><div style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:2px;">${r.date?fmtDate(r.date):'—'} · ${age}</div>${r.desc?`<div style="font-size:11px;color:var(--text);max-width:280px;">${pemrEsc(r.desc.length>90?r.desc.slice(0,90)+'…':r.desc)}</div>`:''}</div>`;
+    }).join('')+(l.length>4?`<div style="font-size:10px;color:var(--muted);">+${l.length-4} more</div>`:'');
+  };
+  
+  const items=src.items.filter(x=>pc(x)[key]>0).map(x=>({x,d:povComputeDelay(x)}));
+  // most delayed first, then by name
+  items.sort((a,b)=>((b.d&&b.d.delayBy>0?b.d.delayBy:0)-(a.d&&a.d.delayBy>0?a.d.delayBy:0))||lv(a.x,LEAD_COL.PNAME).localeCompare(lv(b.x,LEAD_COL.PNAME)));
+
+  const delayBadge=d=>{
+    if(!d)return '<span class="badge bgr">No PO data</span>';
+    if(d.isDone)return d.delayBy>0
+      ?`<span class="badge bo">Completed · ${d.delayBy}d late</span>`
+      :'<span class="badge bg">Completed on time</span>';
+    return d.delayBy>0
+      ?`<span class="badge br">⚠ Delayed ${d.delayBy}d</span>`
+      :`<span class="badge bg">On time · ${-d.delayBy}d left</span>`;
+  };
+
+  // Aging: days since last update (attendance or DPR)
+  const today=new Date();today.setHours(0,0,0,0);
+  const agingCell=x=>{
+    const m=computeProjectMetrics(lv(x,LEAD_COL.PID));
+    const last=m.lastActivity;
+    const lastTxt=last?fmtDate(last):'Never';
+    const a=povAgingOf(x);   // '' for completed / hold / cancelled / not assigned / vendor not finalized
+    if(a){
+      const c=povAgingColor(a);
+      return `<span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;font-weight:600;white-space:nowrap;">${a}</span><div style="font-size:10px;color:var(--muted);margin-top:3px;">Last: ${lastTxt}</div>`;
+    }
+    // not tracked for aging in this status – still show last update date
+    const days=last?Math.floor((today-new Date(last.getFullYear(),last.getMonth(),last.getDate()))/86400000):null;
+    return `<span style="color:var(--muted);font-size:11px;">N/A</span><div style="font-size:10px;color:var(--muted);margin-top:3px;">${last?`Last: ${lastTxt} (${days}d ago)`:'No update'}</div>`;
+  };
+
+  const rowsHtml=items.map(({x,d},i)=>{
+    const pid=lv(x,LEAD_COL.PID),name=lv(x,LEAD_COL.PNAME)||pid;
+    const st=povProjectStatuses(x)[0];
+    const sc=(typeof STAGE_STATUS_COLORS!=='undefined'&&STAGE_STATUS_COLORS[st])||'#8b92b0';
+    const escId=pid.replace(/'/g,"\\'"),escName=name.replace(/'/g,"\\'");
+    return `<tr>
+      <td style="color:var(--muted);">${i+1}</td>
+      <td style="font-weight:500;cursor:pointer;color:#4f8ef7;" onclick="openProjectSummaryFor('${escId}','${escName}')">${pemrEsc(name)}</td>
+      <td><span class="badge bp">${pemrEsc(pid)}</span></td>
+      <td style="font-size:12px;">${pemrEsc(lv(x,LEAD_COL.CITY))||'—'}</td>
+      <td style="font-size:12px;">${lv(x,LEAD_COL.PE)?pemrEsc(lv(x,LEAD_COL.PE)):'<span style="color:#e74c3c;">Not Assigned</span>'}</td>
+      <td><span class="badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}55;">${pemrEsc(st)}</span></td>
+      <td>${delayBadge(d)}</td>
+       <td>${agingCell(x)}</td>
+          ${showIss?`<td onclick="issShowRaw('${escId}')" style="cursor:pointer;" title="Click for full CT Daily Review Tracker data">${issCell(x)}</td>`:''}
+    </tr>`;
+  }).join('');
+
+  let ov=document.getElementById('pemr-modal-ov');
+  if(!ov){ov=document.createElement('div');ov.id='pemr-modal-ov';ov.className='pmr-modal-ov';ov.onclick=(e)=>{if(e.target===ov)pemrCloseDay();};document.body.appendChild(ov);}
+  ov.innerHTML=`<div class="pmr-modal" style="max-width:1100px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+      <div><div style="font-size:15px;font-weight:600;">${pemrEsc(src.label)} — ${pemrEsc(HRC_METRIC_LABELS[key]||key)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">${items.length} project(s) · click a project name for full summary</div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div class="table-wrap" style="overflow:auto;"><table style="font-size:12px;width:100%;">
+      <thead><tr><th>#</th><th>Project Name</th><th>Project ID</th><th>City</th><th>PE</th><th>Status</th><th>Delay Status</th><th>Aging</th>${showIss?'<th>Issue Tracker</th>':''}</tr></thead>
+      <tbody>${rowsHtml||'<tr><td colspan="8" class="empty">No projects</td></tr>'}</tbody>
+    </table></div>
+  </div>`;
+  ov.style.display='flex';
+}
+
+  
+
+  
 
   // ── POV DRILL-DOWN (click cards / cities / buckets / pie for breakdown) ──
 (function(){
@@ -6418,6 +6940,665 @@ function downloadNURCSV(){
     }
   }
 }
+
+
+
+  // ── PM REVIEW ─────────────────────────────────────────────────
+const PMV_MS_CFG={city:{all:'All Cities',ph:'Search cities…'},pm:{all:'All PMs',ph:'Search PMs…'}};
+let _pmvMS={city:new Set(),pm:new Set()};
+let _pmvAll={city:[],pm:[]};
+let _pmvCtx={};
+const PMV_WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function pmvDMs(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();}
+
+function populatePMVFilters(){
+  const months={};
+  D.pmr.r.forEach(x=>{const d=povParseHoldDate(v(x,0));if(d){months[d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')]=d;}});
+  const now=new Date();months[now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')]=now;
+  const msel=document.getElementById('pmv-f-month');
+  if(msel){
+    const cur=msel.value;msel.innerHTML='';
+    const keys=Object.keys(months).sort().reverse();
+    keys.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=months[k].toLocaleDateString('en-IN',{month:'long',year:'numeric'});msel.appendChild(o);});
+    msel.value=(cur&&keys.includes(cur))?cur:keys[0];
+  }
+  const sets={city:new Set(),pm:new Set()};
+  D.lead.r.forEach(x=>{if(!lv(x,LEAD_COL.PID))return;const c=lv(x,LEAD_COL.CITY),p=lv(x,LEAD_COL.CITYMGR);if(c)sets.city.add(c);if(p)sets.pm.add(p);});
+  Object.keys(sets).forEach(k=>{_pmvAll[k]=[...sets[k]].sort((a,b)=>a.localeCompare(b));_pmvMS[k]=new Set([..._pmvMS[k]].filter(z=>sets[k].has(z)));});
+  Object.keys(PMV_MS_CFG).forEach(key=>{
+    const host=document.getElementById('pmv-ms-'+key);if(!host)return;
+    const cfg=PMV_MS_CFG[key];
+    host.innerHTML=`
+      <div class="pov-ms-control" onclick="pmvToggleMS('${key}')"><span class="pov-ms-text placeholder" id="pmv-ms-text-${key}">${cfg.all}</span><i class="ti ti-chevron-down"></i></div>
+      <div class="pov-ms-panel">
+        <input type="text" class="pov-ms-search" id="pmv-ms-search-${key}" placeholder="${cfg.ph}" oninput="pmvRenderOpts('${key}')" onclick="event.stopPropagation()"/>
+        <div class="pov-ms-actions"><button onclick="event.stopPropagation();pmvSelectAll('${key}')">Select all</button><button onclick="event.stopPropagation();pmvClearMS('${key}')">Clear</button></div>
+        <div class="pov-ms-options" id="pmv-ms-options-${key}"></div>
+      </div>`;
+    pmvRenderOpts(key);pmvUpdateCtl(key);
+  });
+}
+function pmvRenderOpts(key){
+  const box=document.getElementById('pmv-ms-options-'+key);if(!box)return;
+  const q=((document.getElementById('pmv-ms-search-'+key)||{}).value||'').trim().toLowerCase();
+  const html=_pmvAll[key].map((o,i)=>({o,i})).filter(({o})=>!q||o.toLowerCase().includes(q)).map(({o,i})=>
+    `<label class="pov-ms-opt" onclick="event.stopPropagation()"><input type="checkbox" ${_pmvMS[key].has(o)?'checked':''} onchange="pmvToggleOpt('${key}',${i})"/><span class="lbl" title="${o.replace(/"/g,'&quot;')}">${pemrEsc(o)}</span></label>`).join('');
+  box.innerHTML=html||'<div class="pov-ms-empty">No matches</div>';
+}
+function pmvToggleOpt(key,i){const o=_pmvAll[key][i];if(_pmvMS[key].has(o))_pmvMS[key].delete(o);else _pmvMS[key].add(o);pmvUpdateCtl(key);buildPMV();}
+function pmvSelectAll(key){const q=((document.getElementById('pmv-ms-search-'+key)||{}).value||'').trim().toLowerCase();_pmvAll[key].filter(o=>!q||o.toLowerCase().includes(q)).forEach(o=>_pmvMS[key].add(o));pmvRenderOpts(key);pmvUpdateCtl(key);buildPMV();}
+function pmvClearMS(key){_pmvMS[key].clear();pmvRenderOpts(key);pmvUpdateCtl(key);buildPMV();}
+function pmvUpdateCtl(key){
+  const t=document.getElementById('pmv-ms-text-'+key);if(!t)return;
+  const s=_pmvMS[key];
+  if(!s.size){t.textContent=PMV_MS_CFG[key].all;t.classList.add('placeholder');}
+  else if(s.size===1){t.textContent=[...s][0];t.classList.remove('placeholder');}
+  else{t.textContent=s.size+' selected';t.classList.remove('placeholder');}
+}
+function pmvToggleMS(key){
+  const host=document.getElementById('pmv-ms-'+key);if(!host)return;
+  const was=host.classList.contains('open');
+  document.querySelectorAll('.pov-ms.open').forEach(el=>el.classList.remove('open'));
+  if(!was){host.classList.add('open');const s=document.getElementById('pmv-ms-search-'+key);if(s){s.value='';pmvRenderOpts(key);setTimeout(()=>s.focus(),0);}}
+}
+function clearPMVFilters(){
+  const w=document.getElementById('pmv-f-week');if(w)w.value='';
+  Object.keys(_pmvMS).forEach(k=>{_pmvMS[k].clear();pmvRenderOpts(k);pmvUpdateCtl(k);});
+  buildPMV();
+}
+
+const PMV_STATUS={
+  done:   {label:'Completed',cls:'pmr-green', badge:'bg'},
+  ongoing:{label:'On going', cls:'pmr-orange',badge:'bo'},
+  pending:{label:'Pending',  cls:'pmr-red',   badge:'br'},
+  leave:  {label:'Leave',    cls:'pmr-teal',  badge:'bb'},
+  none:   {label:'—',        cls:'pmr-grey',  badge:'bgr'},
+  future: {label:'—',        cls:'pmr-grey',  badge:'bgr'}
+};
+function pmvModal(html){
+  let ov=document.getElementById('pemr-modal-ov');
+  if(!ov){ov=document.createElement('div');ov.id='pemr-modal-ov';ov.className='pmr-modal-ov';ov.onclick=(e)=>{if(e.target===ov)pemrCloseDay();};document.body.appendChild(ov);}
+  ov.innerHTML=html;ov.style.display='flex';
+}
+
+function buildPMV(){
+  const monthVal=(document.getElementById('pmv-f-month')||{}).value||'';
+  const weekVal=(document.getElementById('pmv-f-week')||{}).value||'';
+  const head=document.getElementById('pmv-head'),body=document.getElementById('pmv-body'),legend=document.getElementById('pmv-legend');
+  if(!head||!body)return;
+  if(legend)legend.innerHTML=[['pmr-green','Completed (all expected updated)'],['pmr-orange','On going (partially updated)'],['pmr-red','Pending (nothing updated)'],['pmr-teal','Leave (Sunday)'],['pmr-grey','Nothing expected / future']].map(([c,t])=>`<span class="lg"><span class="sw ${c}"></span>${t}</span>`).join('')+'<span class="lg" style="margin-left:auto;">Cell = updated / expected · Updated = Timestamp or I&amp;C OK? filled in PM Review sheet</span>';
+  if(!monthVal){head.innerHTML='';body.innerHTML='<tr><td class="empty">No data</td></tr>';return;}
+
+  const [yy,mm]=monthVal.split('-').map(Number);
+  const dim=new Date(yy,mm,0).getDate();
+  let dayStart=1,dayEnd=dim;
+  if(weekVal){const w=Number(weekVal);dayStart=(w-1)*7+1;dayEnd=Math.min(w*7,dim);if(dayStart>dim){head.innerHTML='';body.innerHTML='<tr><td class="empty">No days in this week</td></tr>';return;}}
+  const days=[];for(let d=dayStart;d<=dayEnd;d++)days.push(new Date(yy,mm-1,d));
+  const todayMs=pmvDMs(new Date());
+
+  // PM Review index: dayMs|projectId -> {ic,mat,ts,rs,done,filled}
+  const h=D.pmr.h;
+  const fx=(names,def)=>{for(const n of names){const i=h.findIndex(z=>String(z).toLowerCase().replace(/[^a-z0-9]/g,'')===n);if(i>=0)return i;}return def;};
+  const iD=fx(['date'],0),iLead=fx(['leadid'],1),iP=fx(['projectid'],2),iIC=fx(['icok'],4),iMat=fx(['materialissue'],5),iTS=fx(['timestamp'],6);
+  const issSet=issueKeySet();
+  const rev={};
+  D.pmr.r.forEach(x=>{
+    const d=povParseHoldDate(v(x,iD)),pid=v(x,iP);if(!d||!pid)return;
+    const ic=v(x,iIC),mat=v(x,iMat),ts=v(x,iTS),lead=v(x,iLead);
+    let rs;
+    if(!ic)rs='Review Pending';
+    else if(/^yes$/i.test(ic)&&/^no$/i.test(mat))rs='Review Completed';
+    else if(lead&&issSet.has(lead+'|'+pmvDMs(d)))rs='Review Completed';
+    else rs='Issue to be Update';
+    const done=rs==='Review Completed';
+    const k=pmvDMs(d)+'|'+pid;
+    if(!rev[k]||(done&&!rev[k].done))rev[k]={ic,mat,ts,rs,done,filled:done};
+  });
+
+  // group filtered projects by PM (City Manager)
+  const pmMap={};
+  D.lead.r.forEach(x=>{
+    const pid=lv(x,LEAD_COL.PID);if(!pid)return;
+    if(_pmvMS.city.size&&!_pmvMS.city.has(lv(x,LEAD_COL.CITY)))return;
+    const pm=lv(x,LEAD_COL.CITYMGR)||'(No PM)';
+    if(_pmvMS.pm.size&&!_pmvMS.pm.has(pm))return;
+    const hi=povHoldInfo(x),m=computeProjectMetrics(pid),vd=vendorFinalizeDate(x);
+    let closeMs=null;
+    if(m.installStatus==='done'&&m.endDate)closeMs=pmvDMs(m.endDate);
+    else if(m.status==='done'&&m.lastAttDate)closeMs=pmvDMs(m.lastAttDate);
+    const p={pid,name:lv(x,LEAD_COL.PNAME)||pid,city:lv(x,LEAD_COL.CITY)||'—',hasPE:!!lv(x,LEAD_COL.PE),
+      vMs:vd?pmvDMs(vd):null,
+      holds:hi.holdIntervals.filter(iv=>iv.start).map(iv=>[pmvDMs(iv.start),iv.end?pmvDMs(iv.end):todayMs]),
+      cancelled:hi.cancelled,cancelMs:hi.cancelDate?pmvDMs(hi.cancelDate):null,closeMs};
+    (pmMap[pm]=pmMap[pm]||{name:pm,cities:new Set(),projs:[]});
+    pmMap[pm].cities.add(p.city);pmMap[pm].projs.push(p);
+  });
+  const pms=Object.values(pmMap).sort((a,b)=>a.name.localeCompare(b.name));
+
+  const active=(p,dMs)=>{
+    if(!p.hasPE)return false;
+    if(p.vMs===null||dMs<p.vMs)return false;
+    if(p.cancelled&&(p.cancelMs===null||dMs>=p.cancelMs))return false;
+    for(const iv of p.holds){if(dMs>=iv[0]&&dMs<=iv[1])return false;}
+    if(p.closeMs!==null&&dMs>p.closeMs)return false;
+    return true;
+  };
+  const stat=(pm,dMs)=>{
+    const exp=[],upd=[];
+    pm.projs.forEach(p=>{if(!active(p,dMs))return;exp.push(p);const r=rev[dMs+'|'+p.pid];if(r&&r.filled)upd.push(p);});
+    let status;
+    if(new Date(dMs).getDay()===0)status='leave';
+    else if(dMs>todayMs)status='future';
+    else if(!exp.length)status='none';
+    else if(!upd.length)status='pending';
+    else if(upd.length<exp.length)status='ongoing';
+    else status='done';
+    return {exp,upd,status};
+  };
+  _pmvCtx={pms,stat,rev,yy,mm,dim,todayMs};
+
+  head.innerHTML='<tr><th class="pmv-c0">PM Name</th><th class="pmv-c1">City</th><th class="pmv-c2">Projects</th>'+
+    days.map(d=>`<th class="dcol" onclick="pmvShowDate(${pmvDMs(d)})" style="cursor:pointer;${d.getDay()===0?'background:rgba(56,178,210,.12);':''}" title="Click for day summary"><div class="dn">${d.getDate()}</div><div class="dw">${PMV_WD[d.getDay()]}</div></th>`).join('')+'</tr>';
+  if(!pms.length){body.innerHTML=`<tr><td class="empty" colspan="${3+days.length}">No PMs match the selected filters</td></tr>`;return;}
+
+  body.innerHTML=pms.map((pm,i)=>{
+    const cities=[...pm.cities].sort().join(', ');
+    const cells=days.map(d=>{
+      const dMs=pmvDMs(d),s=stat(pm,dMs),cfg=PMV_STATUS[s.status];
+      if(s.status==='future'||s.status==='none')return `<td><div class="pmr-cell ${cfg.cls}">—</div></td>`;
+      if(s.status==='leave')return `<td><div class="pmr-cell ${cfg.cls}">Leave<span class="pmr-sub">Sunday</span></div></td>`;
+      return `<td><div class="pmr-cell ${cfg.cls}" onclick="pmvShowDay(${i},${dMs})" style="cursor:pointer;">${cfg.label}<span class="pmr-sub">${s.upd.length}/${s.exp.length}</span></div></td>`;
+    }).join('');
+    return `<tr>
+      <td class="pmv-c0" title="${pemrEsc(pm.name)}"><span onclick="pmvShowPM(${i})" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${pemrEsc(pm.name)}</span></td>
+      <td class="pmv-c1" style="font-size:11px;" title="${pemrEsc(cities)}">${pemrEsc(cities)}</td>
+      <td class="pmv-c2"><span class="badge bp">${pm.projs.length}</span></td>
+      ${cells}
+    </tr>`;
+  }).join('');
+}
+
+// Click a date header → all PMs for that day
+function pmvShowDate(dMs){
+  const c=_pmvCtx;if(!c.pms)return;
+  const dt=new Date(dMs);
+  const label=dt.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'short',year:'numeric'});
+  const cnt={done:0,ongoing:0,pending:0,leave:0,none:0,future:0};let tE=0,tU=0;
+  const rows=c.pms.map((pm,i)=>{
+    const s=c.stat(pm,dMs);cnt[s.status]++;tE+=s.exp.length;tU+=s.upd.length;
+    const cfg=PMV_STATUS[s.status];
+    const lab=(s.status==='none'||s.status==='future')?'<span class="badge bgr">Nothing expected</span>':`<span class="badge ${cfg.badge}">${cfg.label}</span>`;
+    return `<tr${(s.status==='leave'||s.status==='none'||s.status==='future')?'':` onclick="pmvShowDay(${i},${dMs})" style="cursor:pointer;"`}>
+      <td style="font-weight:500;">${pemrEsc(pm.name)}</td>
+      <td style="font-size:11px;color:var(--muted);">${pemrEsc([...pm.cities].sort().join(', '))}</td>
+      <td style="text-align:right;">${s.exp.length}</td>
+      <td style="text-align:right;color:#34c98a;font-weight:600;">${s.upd.length}</td>
+      <td style="text-align:right;color:${s.exp.length-s.upd.length?'#e74c3c':'var(--muted)'};">${s.exp.length-s.upd.length}</td>
+      <td>${lab}</td></tr>`;
+  }).join('');
+  const cards=
+    metric('ti-users','Total PMs',c.pms.length,'In current view','#4f8ef7')+
+    metric('ti-circle-check','Completed',cnt.done,'All updated','#34c98a')+
+    metric('ti-loader','On going',cnt.ongoing,'Partially updated','#f5a623')+
+    metric('ti-clock','Pending',cnt.pending,'Nothing updated','#e74c3c')+
+    metric('ti-beach','Leave',cnt.leave,dt.getDay()===0?'Sunday':'','#3bc0d8')+
+    metricWithBar('ti-checklist','Projects Updated',tU,`of ${tE} expected · ${tE?Math.round(tU/tE*100):0}%`,'#9b6dff',tE?tU/tE*100:0,'#9b6dff');
+  pmvModal(`<div class="pmr-modal" style="max-width:900px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;">
+      <div><div style="font-size:15px;font-weight:600;">PM Review — Daily Summary</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${label} · click a PM for project list</div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div class="metrics" style="margin-top:8px;">${cards}</div>
+    <div class="table-wrap" style="overflow:auto;"><table style="font-size:12px;width:100%;">
+      <thead><tr><th>PM</th><th>City</th><th style="text-align:right;">Expected</th><th style="text-align:right;">Updated</th><th style="text-align:right;">Pending</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+  </div>`);
+}
+
+// Click a cell → project list for that PM on that day
+function pmvShowDay(i,dMs){
+  const c=_pmvCtx;const pm=c.pms[i];if(!pm)return;
+  const s=c.stat(pm,dMs),cfg=PMV_STATUS[s.status];
+  const label=new Date(dMs).toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  const updSet=new Set(s.upd.map(p=>p.pid));
+  const list=[...s.exp].sort((a,b)=>(updSet.has(a.pid)?1:0)-(updSet.has(b.pid)?1:0)||a.name.localeCompare(b.name));
+  const rows=list.map((p,n)=>{
+    const r=c.rev[dMs+'|'+p.pid]||{};const ok=updSet.has(p.pid);
+    const mat=r.mat?`<span class="badge ${/^y/i.test(r.mat)?'br':'bg'}">${pemrEsc(r.mat)}</span>`:'<span style="color:var(--muted);">—</span>';
+    return `<tr><td style="color:var(--muted);">${n+1}</td>
+      <td style="font-weight:500;">${pemrEsc(p.name)}</td>
+      <td><span class="badge bp">${pemrEsc(p.pid)}</span></td>
+      <td style="font-size:12px;">${pemrEsc(p.city)}</td>
+            <td>${ok?'<span class="badge bg">✓ '+pemrEsc(r.rs||'Review Completed')+'</span>':'<span class="badge br">'+pemrEsc(r.rs||'Review Pending')+'</span>'}</td>
+      <td>${r.ic?pemrEsc(r.ic):'<span style="color:var(--muted);">—</span>'}</td>
+      <td>${mat}</td>
+      <td style="font-size:11px;white-space:nowrap;">${r.ts?pemrEsc(r.ts):'—'}</td></tr>`;
+  }).join('');
+  pmvModal(`<div class="pmr-modal" style="max-width:960px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;">
+      <div><div style="font-size:15px;font-weight:600;">${pemrEsc(pm.name)} — ${label}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;"><span class="badge ${cfg.badge}">${cfg.label}</span> &nbsp;${s.upd.length} of ${s.exp.length} expected projects updated</div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div class="table-wrap" style="overflow:auto;"><table style="font-size:12px;width:100%;">
+      <thead><tr><th>#</th><th>Project</th><th>Project ID</th><th>City</th><th>Review</th><th>I&amp;C OK?</th><th>Material Issue?</th><th>Timestamp</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="8" class="empty">No expected projects</td></tr>'}</tbody></table></div>
+  </div>`);
+}
+
+// Click a PM name → monthly report
+function pmvShowPM(i){
+  const c=_pmvCtx;const pm=c.pms[i];if(!pm)return;
+  const monthLabel=new Date(c.yy,c.mm-1,1).toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  const cnt={done:0,ongoing:0,pending:0,leave:0,none:0};let tE=0,tU=0;
+  const pendDates=[],ongDates=[],rows=[];
+  for(let d=1;d<=c.dim;d++){
+    const dMs=new Date(c.yy,c.mm-1,d).getTime();
+    if(dMs>c.todayMs)break;
+    const s=c.stat(pm,dMs);cnt[s.status]++;tE+=s.exp.length;tU+=s.upd.length;
+    const dt=new Date(dMs);
+    if(s.status==='pending')pendDates.push(dt);
+    if(s.status==='ongoing')ongDates.push(dt);
+    const cfg=PMV_STATUS[s.status];
+    const clk=(s.status==='leave'||s.status==='none')?'':` onclick="pmvShowDay(${i},${dMs})" style="cursor:pointer;"`;
+    rows.push(`<tr${clk}><td>${dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})} · ${PMV_WD[dt.getDay()]}</td>
+      <td style="text-align:right;">${s.exp.length||'—'}</td>
+      <td style="text-align:right;color:#34c98a;">${s.upd.length||'—'}</td>
+      <td><span class="badge ${cfg.badge}">${s.status==='none'?'Nothing expected':cfg.label}</span></td></tr>`);
+  }
+  const working=cnt.done+cnt.ongoing+cnt.pending;
+  const chip=(dt,col)=>`<span style="font-size:11px;background:${col}22;color:${col};border:1px solid ${col}55;border-radius:6px;padding:3px 8px;">${dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})} · ${PMV_WD[dt.getDay()]}</span>`;
+  const cards=
+    metric('ti-briefcase','Total Projects',pm.projs.length,[...pm.cities].sort().join(', '),'#4f8ef7')+
+    metric('ti-calendar','Working Days',working,`Sundays excluded (${cnt.leave} leave) · ${monthLabel}`,'#9b6dff')+
+    metricWithBar('ti-circle-check','Completed Days',cnt.done,`${working?Math.round(cnt.done/working*100):0}% of working days`,'#34c98a',working?cnt.done/working*100:0,'#34c98a')+
+    metricWithBar('ti-loader','On going Days',cnt.ongoing,`${working?Math.round(cnt.ongoing/working*100):0}% of working days`,'#f5a623',working?cnt.ongoing/working*100:0,'#f5a623')+
+    metricWithBar('ti-clock','Pending Days',cnt.pending,`${working?Math.round(cnt.pending/working*100):0}% of working days`,'#e74c3c',working?cnt.pending/working*100:0,'#e74c3c')+
+    metricWithBar('ti-checklist','Total Updates',tU,`of ${tE} expected · ${tE?Math.round(tU/tE*100):0}%`,'#3bc0d8',tE?tU/tE*100:0,'#3bc0d8');
+  const sect=(t,inner)=>`<div style="margin-top:12px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px;">${t}</div>${inner}</div>`;
+  pmvModal(`<div class="pmr-modal" style="max-width:860px;max-height:92vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;">
+      <div><div style="font-size:15px;font-weight:600;">${pemrEsc(pm.name)} — Monthly Report</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${monthLabel} · every Sunday is leave (no update required)</div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div style="overflow:auto;">
+      <div class="metrics" style="margin-top:8px;">${cards}</div>
+      ${pendDates.length?sect(`Pending Dates (${pendDates.length})`,`<div style="display:flex;flex-wrap:wrap;gap:6px;">${pendDates.map(d=>chip(d,'#e74c3c')).join('')}</div>`):''}
+      ${ongDates.length?sect(`On going Dates (${ongDates.length})`,`<div style="display:flex;flex-wrap:wrap;gap:6px;">${ongDates.map(d=>chip(d,'#f5a623')).join('')}</div>`):''}
+      ${sect('Day-wise',`<div class="table-wrap"><table style="font-size:12px;width:100%;"><thead><tr><th>Date</th><th style="text-align:right;">Expected</th><th style="text-align:right;">Updated</th><th>Status</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`)}
+    </div>
+  </div>`);
+}
+
+ // ── ISSUE TRACKER ─────────────────────────────────────────────
+const ISS_STATUSES=['Under Central Review','Under CH Review','Under PM Review','Under PE Review','Pending','Completed'];
+const ISS_INPROC=['Under Central Review','Under CH Review','Under PM Review','Under PE Review'];
+const ISS_COL={'Under Central Review':'#e0518a','Under CH Review':'#9b6dff','Under PM Review':'#4f8ef7','Under PE Review':'#3bc0d8','Pending':'#f5a623','Completed':'#34c98a'};
+const ISS_BUCKETS=[['0–3 days',0,3],['3–7 days',4,7],['7–15 days',8,15],['15–30 days',16,30],['30–45 days',31,45],['45–60 days',46,60],['>60 days',61,1e9]];
+const ISS_MS_CFG={city:'All Cities',pm:'All PMs',status:'All Statuses',size:'All Sizes'};
+let _issMS={city:new Set(),pm:new Set(),status:new Set(),size:new Set()};
+let _issAll={city:[],pm:[],status:ISS_STATUSES.slice(),size:SIZE_CATEGORIES.slice()};
+let _issRows=[],_issReg=[];
+
+function issNorm(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');}
+function issCol(h,names){for(const n of names){const i=h.findIndex(z=>issNorm(z)===n);if(i>=0)return i;}return -1;}
+function issStatusOf(c,ch,pm,pe){
+  const L=s=>String(s||'').trim().toLowerCase();
+  if(L(c)==='open')return 'Under Central Review';
+  if(L(ch)==='open')return 'Under CH Review';
+  if(L(pm)==='open')return 'Under PM Review';
+  if(L(pe)==='open')return 'Under PE Review';
+  if([c,ch,pm,pe].some(z=>L(z)==='completed'))return 'Completed';
+  return 'Pending';
+}
+// Lead ID + day keys from the issue tracker (used by PM Review status)
+function issueKeySet(){
+  const set=new Set(),h=D.issue.h;
+  const iL=issCol(h,['leadid']),iD=issCol(h,['date']);
+  if(iL<0||iD<0)return set;
+  D.issue.r.forEach(x=>{const d=povParseHoldDate(v(x,iD)),l=v(x,iL);if(d&&l)set.add(l+'|'+pmvDMs(d));});
+  return set;
+}
+
+
+  function issBuildRows(){
+  const h=D.issue.h;if(!h.length)return [];
+  const iL=issCol(h,['leadid']),iD=issCol(h,['date']),iP=issCol(h,['projectid']),iN=issCol(h,['projectname']);
+  const iC=issCol(h,['centralclosurestatus']),iH=issCol(h,['chescalationstatus']),iM=issCol(h,['pmescalationstatus']),iE=issCol(h,['escalationstatuspe']);
+  const iDesc=(()=>{let i=issCol(h,['issueblocker']);if(i>=0)return i;return h.findIndex(z=>{const n=issNorm(z);return (n.includes('blocker')||n.includes('remark')||n.includes('comment'))&&!n.includes('status');});})();
+  let iSev=h.findIndex(z=>issNorm(z).includes('severity'));if(iSev<0)iSev=13;
+  const normSev=s=>{const l=String(s||'').trim().toLowerCase();return l==='high'?'High':l==='medium'?'Medium':l==='low'?'Low':'';};
+  const iEnd=h.findIndex(z=>{const n=issNorm(z);return (n.includes('closure')||n.includes('closed')||n.includes('completion')||n.includes('resolved'))&&(n.includes('date')||n.includes('time'))&&!n.includes('status');});
+  const miss=[['Lead ID',iL],['Date',iD],['Central closure status',iC],['CH Escalation Status',iH],['PM Escalation Status',iM],['Escalation Status (PE)',iE]].filter(z=>z[1]<0).map(z=>z[0]);
+  const note=document.getElementById('iss-note');
+  if(note)note.innerHTML=(!h.length||miss.length)?`<div style="padding:10px 12px;margin-bottom:12px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);border-radius:8px;font-size:12px;">Columns not found in the issue sheet: <b>${miss.join(', ')}</b>. Check the header names.</div>`:'';
+  const ph=D.pmr.h,pL=issCol(ph,['leadid']),pP=issCol(ph,['projectid']);
+  const leadToPid={};
+  if(pL>=0&&pP>=0)D.pmr.r.forEach(x=>{const l=v(x,pL),p=v(x,pP);if(l&&p)leadToPid[l]=p;});
+  const leadRow={};D.lead.r.forEach(x=>{const p=lv(x,LEAD_COL.PID);if(p)leadRow[p]=x;});
+  const isAdmin=_user&&_user.role==='admin';
+  const today=new Date();today.setHours(0,0,0,0);
+  const rows=[];
+  D.issue.r.forEach(x=>{
+    const lead=iL>=0?v(x,iL):'';
+    if(!lead&&iP<0)return;
+    let pid=iP>=0?v(x,iP):'';if(!pid)pid=leadToPid[lead]||'';
+    const lr=leadRow[pid];
+    if(!lr&&!isAdmin)return;
+    const status=issStatusOf(iC>=0?v(x,iC):'',iH>=0?v(x,iH):'',iM>=0?v(x,iM):'',iE>=0?v(x,iE):'');
+    const d=iD>=0?povParseHoldDate(v(x,iD)):null;
+    const s0=d?new Date(d.getFullYear(),d.getMonth(),d.getDate()):null;
+    const endD=iEnd>=0?povParseHoldDate(v(x,iEnd)):null;
+    let days=null,bucket='',tat=null;
+    if(status!=='Completed'&&s0){
+      days=Math.max(0,Math.floor((today-s0)/86400000));
+      const b=ISS_BUCKETS.find(z=>days>=z[1]&&days<=z[2]);bucket=b?b[0]:'';
+      tat=days;                                   // not solved → today − requested date
+    }else if(s0&&endD){
+      tat=Math.max(0,Math.round((new Date(endD.getFullYear(),endD.getMonth(),endD.getDate())-s0)/86400000));
+    }
+    rows.push({lead,pid:pid||'—',name:(iN>=0&&v(x,iN))||(lr?lv(lr,LEAD_COL.PNAME):'')||pid||'—',
+      city:lr?lv(lr,LEAD_COL.CITY)||'—':'—',pm:lr?lv(lr,LEAD_COL.CITYMGR)||'(No PM)':'—',pe:lr?lv(lr,LEAD_COL.PE):'',
+      size:lr?sizeCategoryOf(lr):'—',status,date:d,days,bucket,tat,endD,
+      desc:iDesc>=0?v(x,iDesc):'',sev:normSev(iSev>=0?v(x,iSev):''),raw:x});
+  });
+  return rows;
+}
+
+  
+
+function populateISSFilters(){
+  const rows=issBuildRows();
+  _issAll.city=[...new Set(rows.map(r=>r.city))].filter(z=>z&&z!=='—').sort();
+  _issAll.pm=[...new Set(rows.map(r=>r.pm))].filter(z=>z&&z!=='—').sort();
+  Object.keys(ISS_MS_CFG).forEach(key=>{
+    const host=document.getElementById('iss-ms-'+key);if(!host)return;
+    host.innerHTML=`
+      <div class="pov-ms-control" onclick="issToggleMS('${key}')"><span class="pov-ms-text placeholder" id="iss-ms-text-${key}">${ISS_MS_CFG[key]}</span><i class="ti ti-chevron-down"></i></div>
+      <div class="pov-ms-panel">
+        <input type="text" class="pov-ms-search" id="iss-ms-search-${key}" placeholder="Search…" oninput="issRenderOpts('${key}')" onclick="event.stopPropagation()"/>
+        <div class="pov-ms-actions"><button onclick="event.stopPropagation();issSelectAll('${key}')">Select all</button><button onclick="event.stopPropagation();issClearMS('${key}')">Clear</button></div>
+        <div class="pov-ms-options" id="iss-ms-options-${key}"></div>
+      </div>`;
+    issRenderOpts(key);issUpdateCtl(key);
+  });
+}
+function issRenderOpts(key){
+  const box=document.getElementById('iss-ms-options-'+key);if(!box)return;
+  const q=((document.getElementById('iss-ms-search-'+key)||{}).value||'').trim().toLowerCase();
+  const html=_issAll[key].map((o,i)=>({o,i})).filter(({o})=>!q||o.toLowerCase().includes(q)).map(({o,i})=>
+    `<label class="pov-ms-opt" onclick="event.stopPropagation()"><input type="checkbox" ${_issMS[key].has(o)?'checked':''} onchange="issToggleOpt('${key}',${i})"/><span class="lbl">${pemrEsc(o)}</span></label>`).join('');
+  box.innerHTML=html||'<div class="pov-ms-empty">No matches</div>';
+}
+function issToggleOpt(key,i){const o=_issAll[key][i];if(_issMS[key].has(o))_issMS[key].delete(o);else _issMS[key].add(o);issUpdateCtl(key);buildISS();}
+function issSelectAll(key){const q=((document.getElementById('iss-ms-search-'+key)||{}).value||'').trim().toLowerCase();_issAll[key].filter(o=>!q||o.toLowerCase().includes(q)).forEach(o=>_issMS[key].add(o));issRenderOpts(key);issUpdateCtl(key);buildISS();}
+function issClearMS(key){_issMS[key].clear();issRenderOpts(key);issUpdateCtl(key);buildISS();}
+function issUpdateCtl(key){const t=document.getElementById('iss-ms-text-'+key);if(!t)return;const s=_issMS[key];
+  if(!s.size){t.textContent=ISS_MS_CFG[key];t.classList.add('placeholder');}else if(s.size===1){t.textContent=[...s][0];t.classList.remove('placeholder');}else{t.textContent=s.size+' selected';t.classList.remove('placeholder');}}
+function issToggleMS(key){const host=document.getElementById('iss-ms-'+key);if(!host)return;const was=host.classList.contains('open');
+  document.querySelectorAll('.pov-ms.open').forEach(el=>el.classList.remove('open'));
+  if(!was){host.classList.add('open');const s=document.getElementById('iss-ms-search-'+key);if(s){s.value='';issRenderOpts(key);setTimeout(()=>s.focus(),0);}}}
+function clearISSFilters(){Object.keys(_issMS).forEach(k=>{_issMS[k].clear();issRenderOpts(k);issUpdateCtl(k);});buildISS();}
+
+// register a list of rows and return its id (used by onclick)
+function issReg(rows){_issReg.push(rows);return _issReg.length-1;}
+
+
+  const ISS_SEV=['High','Medium','Low'];
+const ISS_SEV_COL={High:'#e74c3c',Medium:'#f5a623',Low:'#34c98a','Not set':'#8b92b0'};
+function issSevCard(rows){
+  const groups={};['High','Medium','Low','Not set'].forEach(k=>groups[k]=[]);
+  rows.forEach(r=>groups[r.sev||'Not set'].push(r));
+  const total=rows.length;
+  const cx=45,cy=45,r=40;let ang=-Math.PI/2;const slices=[];
+  Object.entries(groups).forEach(([k,l])=>{
+    if(!l.length)return;
+    const frac=l.length/total,c=ISS_SEV_COL[k];
+    if(frac>0.999){slices.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}"/>`);return;}
+    const a2=ang+frac*Math.PI*2;
+    slices.push(`<path d="M ${cx} ${cy} L ${(cx+r*Math.cos(ang)).toFixed(2)} ${(cy+r*Math.sin(ang)).toFixed(2)} A ${r} ${r} 0 ${frac>0.5?1:0} 1 ${(cx+r*Math.cos(a2)).toFixed(2)} ${(cy+r*Math.sin(a2)).toFixed(2)} Z" fill="${c}" stroke="var(--surface)" stroke-width="1.5" style="cursor:pointer;" onclick="issShowProjects('Severity: ${k}',${issReg(l)})"/>`);
+    ang=a2;
+  });
+  const legend=Object.entries(groups).filter(([k,l])=>l.length||k!=='Not set').map(([k,l])=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;padding:2px 0;${l.length?'cursor:pointer;':''}"${l.length?` onclick="issShowProjects('Severity: ${k}',${issReg(l)})"`:''}><i class="ti ti-flag-filled" style="color:${ISS_SEV_COL[k]};font-size:12px;"></i><span style="flex:1;">${k}</span><b style="color:${ISS_SEV_COL[k]};">${l.length}</b><span style="color:var(--muted);min-width:30px;text-align:right;">${total?Math.round(l.length/total*100):0}%</span></div>`).join('');
+  return `<div class="metric" style="--mc:#e74c3c;padding:12px 14px;"><div class="mlbl" style="margin-bottom:6px;"><i class="ti ti-flag"></i> Severity</div><div style="display:flex;align-items:center;gap:12px;">${total?`<svg viewBox="0 0 90 90" style="width:78px;height:78px;flex-shrink:0;">${slices.join('')}</svg>`:'<div class="empty" style="padding:8px;">No data</div>'}<div style="flex:1;min-width:0;">${legend}</div></div></div>`;
+}
+  
+
+function buildISS(){
+  _issReg=[];
+  const all=issBuildRows();
+  const rows=all.filter(r=>{
+    if(_issMS.city.size&&!_issMS.city.has(r.city))return false;
+    if(_issMS.pm.size&&!_issMS.pm.has(r.pm))return false;
+    if(_issMS.status.size&&!_issMS.status.has(r.status))return false;
+    if(_issMS.size.size&&!_issMS.size.has(r.size))return false;
+    return true;
+  });
+  _issRows=rows;
+  const total=rows.length;
+  const inproc=rows.filter(r=>ISS_INPROC.includes(r.status)),done=rows.filter(r=>r.status==='Completed'),pend=rows.filter(r=>r.status==='Pending');
+  const pct=n=>total?Math.round(n/total*100):0;
+    const card=(icon,lbl,list,color)=>`<div class="metric" style="--mc:${color};cursor:pointer;padding:12px 14px;" onclick="issShowProjects('${lbl}',${issReg(list)})"><div class="micon" style="font-size:15px;margin-bottom:4px;"><i class="ti ${icon}"></i></div><div class="mlbl">${lbl}</div><div class="mval" style="font-size:22px;">${list.length}</div><div class="msub">${pct(list.length)}% · ${new Set(list.map(r=>r.pid)).size} project(s)</div></div>`;
+  document.getElementById('iss-metrics').innerHTML=
+    card('ti-bug','Total Issues',rows,'#4f8ef7')+card('ti-loader','In Process',inproc,'#9b6dff')+card('ti-circle-check','Completed',done,'#34c98a')+card('ti-clock','Pending',pend,'#f5a623')+issSevCard(rows);
+
+  // status table
+  const sBody=ISS_STATUSES.map(s=>{
+    const l=rows.filter(r=>r.status===s),c=ISS_COL[s];
+    return `<tr onclick="issStatusDetail('${s}')" style="cursor:pointer;"><td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${c};margin-right:8px;"></span>${s}</td><td style="text-align:right;font-weight:600;color:${c};">${l.length}</td><td style="text-align:right;color:var(--muted);">${pct(l.length)}%</td></tr>`;
+  }).join('');
+  document.getElementById('iss-status').innerHTML=`<table style="font-size:12px;width:100%;"><thead><tr><th>Status</th><th style="text-align:right;">Issues</th><th style="text-align:right;">%</th></tr></thead><tbody>${sBody}</tbody><tfoot><tr style="border-top:2px solid var(--border2);"><td style="font-weight:700;">Total</td><td style="text-align:right;font-weight:700;">${total}</td><td></td></tr></tfoot></table>`;
+
+  // aging table (open issues only)
+  const open=rows.filter(r=>r.status!=='Completed');
+  const aBody=ISS_BUCKETS.map(b=>{
+    const l=open.filter(r=>r.bucket===b[0]),p=open.length?Math.round(l.length/open.length*100):0;
+    const col=b[1]>=46?'#e74c3c':b[1]>=16?'#e8743b':b[1]>=4?'#f5a623':'#34c98a';
+    return `<tr${l.length?` onclick="issShowProjects('Aging ${b[0]}',${issReg(l)})" style="cursor:pointer;"`:''}><td>${b[0]}</td><td style="text-align:right;font-weight:600;color:${col};">${l.length}</td><td style="text-align:right;color:var(--muted);">${p}%</td><td style="min-width:90px;"><div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:${p}%;height:100%;background:${col};"></div></div></td></tr>`;
+  }).join('');
+  document.getElementById('iss-aging').innerHTML=`<table style="font-size:12px;width:100%;"><thead><tr><th>Aging</th><th style="text-align:right;">Open</th><th style="text-align:right;">%</th><th></th></tr></thead><tbody>${aBody}</tbody><tfoot><tr style="border-top:2px solid var(--border2);"><td style="font-weight:700;">Total open</td><td style="text-align:right;font-weight:700;">${open.length}</td><td></td><td></td></tr></tfoot></table>`;
+
+  // PM-wise
+  const pmM={};rows.forEach(r=>{(pmM[r.pm]=pmM[r.pm]||[]).push(r);});
+  const numCell=(l,label,col)=>l.length?`<td style="text-align:right;color:${col};font-weight:600;cursor:pointer;text-decoration:underline dotted;" onclick="issShowProjects('${label}',${issReg(l)})">${l.length}</td>`:'<td style="text-align:right;color:var(--muted);">—</td>';
+  const pmRows=Object.entries(pmM).sort((a,b)=>b[1].length-a[1].length).map(([pm,l],i)=>{
+    const nm=pm.replace(/'/g,"\\'"),ip=l.filter(r=>ISS_INPROC.includes(r.status)),dn=l.filter(r=>r.status==='Completed'),pn=l.filter(r=>r.status==='Pending');
+    return `<tr><td style="color:var(--muted);">${i+1}</td><td style="font-weight:500;">${pemrEsc(pm)}</td>${numCell(l,nm+' — Total','var(--text)')}${numCell(ip,nm+' — In Process','#9b6dff')}${numCell(dn,nm+' — Completed','#34c98a')}${numCell(pn,nm+' — Pending','#f5a623')}<td style="text-align:right;color:var(--muted);">${l.length?Math.round(dn.length/l.length*100):0}%</td></tr>`;
+  }).join('');
+  document.getElementById('iss-pm').innerHTML=`<table style="font-size:12px;width:100%;"><thead><tr><th>#</th><th>PM</th><th style="text-align:right;">Total</th><th style="text-align:right;">In Process</th><th style="text-align:right;">Completed</th><th style="text-align:right;">Pending</th><th style="text-align:right;">Closure %</th></tr></thead><tbody>${pmRows||'<tr><td colspan="7" class="empty">No issues</td></tr>'}</tbody></table>`;
+
+  // detail table
+    renderISSDetail();
+}
+
+
+  let _issExp=new Set();
+function issToggleProj(i){const p=(window._issProjList||[])[i];if(!p)return;if(_issExp.has(p.pid))_issExp.delete(p.pid);else _issExp.add(p.pid);renderISSDetail();}
+function issExpandAll(){(window._issProjList||[]).forEach(p=>_issExp.add(p.pid));renderISSDetail();}
+function issCollapseAll(){_issExp.clear();renderISSDetail();}
+
+
+function renderISSDetail(){
+  const head=document.getElementById('iss-head'),body=document.getElementById('iss-body');
+  if(!head||!body)return;
+  const hdrs=D.issue.h;
+  const m={};
+  _issRows.forEach(r=>{(m[r.pid]=m[r.pid]||[]).push(r);});
+  const projs=Object.entries(m).map(([pid,l])=>{
+    const open=l.filter(r=>r.status!=='Completed');
+    let pstat='Completed';
+    if(open.length)pstat=open.some(r=>ISS_INPROC.includes(r.status))?'In Process':'Pending';
+    const known=l.filter(r=>r.tat!=null);
+    const tatSum=known.reduce((s,r)=>s+r.tat,0);
+    return{pid,l,f:l[0],total:l.length,done:l.length-open.length,pend:open.length,pstat,tatSum,tatKnown:known.length,
+      oldest:open.length?Math.max(...open.map(r=>r.days||0)):null};
+  }).sort((a,b)=>(b.pend>0)-(a.pend>0)||(b.oldest||0)-(a.oldest||0)||a.f.name.localeCompare(b.f.name));
+  window._issProjList=projs;
+
+  head.innerHTML='<tr><th style="width:34px;">#</th><th>Project ID</th><th>Project Name</th><th>City</th><th>PM</th><th>PE</th><th>Size</th><th style="text-align:center;">Total Issues</th><th style="min-width:200px;">Resolution</th><th>Project Status</th><th>Issue TAT</th><th>Oldest Open</th></tr>';
+  if(!projs.length){body.innerHTML='<tr><td colspan="12" class="empty">No issues match the filters</td></tr>';return;}
+
+  const PS_COL={'Completed':'#34c98a','In Process':'#9b6dff','Pending':'#f5a623'};
+  const sevBadge=s=>s?`<span class="badge" style="background:${ISS_SEV_COL[s]}22;color:${ISS_SEV_COL[s]};border:1px solid ${ISS_SEV_COL[s]}55;white-space:nowrap;"><i class="ti ti-flag-filled" style="font-size:11px;margin-right:3px;"></i>${s}</span>`:'<span style="color:var(--muted);">Not set</span>';
+  const ageBadge=d=>{
+    if(d==null)return '<span style="color:var(--muted);">Closed</span>';
+    const c=d>60?'#e74c3c':d>30?'#e8743b':d>7?'#f5a623':'#34c98a';
+    return `<span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;">${d}d</span>`;
+  };
+
+  body.innerHTML=projs.map((p,i)=>{
+    const f=p.f,exp=_issExp.has(p.pid);
+    const pct=Math.round(p.done/p.total*100);
+    const allDone=p.pend===0;
+    const barCol=allDone?'#34c98a':p.done>0?'#f5a623':'#e74c3c';
+    const resolution=`<div style="font-size:12px;font-weight:600;color:${barCol};margin-bottom:4px;">${p.done}/${p.total} completed${allDone?' ✓':` · ${p.pend} pending`}</div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:${barCol};"></div></div><span style="font-size:11px;color:var(--muted);min-width:30px;text-align:right;">${pct}%</span></div>`;
+    const pc=PS_COL[p.pstat];
+    const pbadge=`<span class="badge" style="background:${pc}22;color:${pc};border:1px solid ${pc}55;white-space:nowrap;">${p.pstat}</span>`;
+    const tatCell=p.tatKnown?`<div style="font-size:13px;font-weight:700;color:#4f8ef7;">${p.tatSum} days</div><div style="font-size:10px;color:var(--muted);">${p.tatKnown} issue(s) · avg ${Math.round(p.tatSum/p.tatKnown)}d</div>`:'<span style="color:var(--muted);">—</span>';
+    const main=`<tr style="${exp?'background:rgba(79,142,247,0.06);':''}">
+      <td style="color:var(--muted);">${i+1}</td>
+      <td><button class="hrc-tg" onclick="issToggleProj(${i})" style="color:#4f8ef7;">${exp?'−':'+'}</button><span class="badge bp">${pemrEsc(p.pid)}</span></td>
+      <td style="font-weight:500;color:#4f8ef7;cursor:pointer;" onclick="issToggleProj(${i})" title="Click to show issue details">${pemrEsc(f.name)}</td>
+      <td style="font-size:12px;">${pemrEsc(f.city)}</td>
+      <td style="font-size:12px;">${pemrEsc(f.pm)}</td>
+      <td style="font-size:12px;">${f.pe?pemrEsc(f.pe):'<span style="color:#e74c3c;">Not Assigned</span>'}</td>
+      <td style="font-size:12px;">${pemrEsc(f.size)}</td>
+      <td style="text-align:center;"><span class="badge bb" style="font-size:13px;font-weight:700;">${p.total}</span></td>
+      <td>${resolution}</td>
+      <td>${pbadge}</td>
+      <td>${tatCell}</td>
+      <td>${ageBadge(p.oldest)}</td></tr>`;
+    if(!exp)return main;
+    const subs=[...p.l].sort((a,b)=>((a.status==='Completed')-(b.status==='Completed'))||((b.date?b.date.getTime():0)-(a.date?a.date.getTime():0)));
+    const cards=subs.map((r,n)=>{
+      const c=ISS_COL[r.status];
+      const tatTxt=r.tat==null?'—':r.tat+' days'+(r.status!=='Completed'?' (running)':'');
+      const HIDE=['issueraisedby','leadid','sseid','sitename','dadate','projectstartdate','pe','pm','ch','uniqueid','projectid','projectname'];
+      const fields=hdrs.map((hd,k)=>{
+        if(HIDE.includes(issNorm(hd)))return '';
+        const val=String(r.raw[k]==null?'':r.raw[k]).trim();
+        if(!val)return '';
+        const isUrl=/^https?:\/\//i.test(val);
+        return `<div style="flex:0 0 auto;min-width:120px;max-width:260px;padding:0 14px 0 0;margin-right:14px;border-right:1px solid var(--border);"><div style="font-size:10px;color:var(--muted);">${pemrEsc(hd)}</div><div style="font-size:12px;white-space:pre-wrap;word-break:break-word;">${isUrl?`<a href="${pemrEsc(val)}" target="_blank" rel="noopener" style="color:#4f8ef7;">${pemrEsc(val.length>50?val.slice(0,50)+'…':val)}</a>`:pemrEsc(val)}</div></div>`;
+      }).join('');
+      return `<div style="border-bottom:1px solid var(--border);padding:8px 0 10px;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <b style="font-size:12px;">Issue ${n+1}</b>
+          <span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;white-space:nowrap;">${r.status}</span>
+          ${sevBadge(r.sev)}
+          <span style="font-size:11px;color:var(--muted);">Started <b style="color:var(--text);">${r.date?fmtDate(r.date):'—'}</b></span>
+          <span style="font-size:11px;color:var(--muted);">Completed <b style="color:var(--text);">${r.status==='Completed'?(r.endD?fmtDate(r.endD):'—'):'Open'}</b></span>
+          <span style="font-size:11px;color:var(--muted);">Issue TAT <b style="color:#4f8ef7;">${tatTxt}</b></span>
+        </div>
+         <div style="display:flex;flex-wrap:nowrap;overflow-x:auto;padding:2px 0 4px;">${fields}</div>
+      </div>`;
+    }).join('');
+    const sub=`<tr><td></td><td colspan="11" style="padding:8px 0 14px 24px;border-left:3px solid #4f8ef7;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;">All issues for ${pemrEsc(f.name)} (${p.total}) · total issue TAT ${p.tatKnown?p.tatSum+' days':'—'} · CT Daily Review Tracker</div>
+      ${cards}</td></tr>`;
+    return main+sub;
+  }).join('');
+}
+  
+
+function issRowsHtml(list,full){
+  const sorted=[...list].sort((a,b)=>(b.days===null?-1:b.days)-(a.days===null?-1:a.days));
+  return sorted.map((r,i)=>{
+    const c=ISS_COL[r.status],ac=r.days===null?'var(--muted)':r.days>60?'#e74c3c':r.days>30?'#e8743b':r.days>7?'#f5a623':'#34c98a';
+    const esc=r.pid.replace(/'/g,"\\'"),en=r.name.replace(/'/g,"\\'");
+    const aging=r.days===null?'<span style="color:var(--muted);">Closed</span>':`<span class="badge" style="background:${ac}22;color:${ac};border:1px solid ${ac}55;">${r.days}d · ${r.bucket}</span>`;
+    return `<tr><td style="color:var(--muted);">${i+1}</td>
+      <td><span class="badge bp">${pemrEsc(r.pid)}</span></td>
+      <td style="font-weight:500;color:#4f8ef7;cursor:pointer;" onclick="openProjectSummaryFor('${esc}','${en}')">${pemrEsc(r.name)}</td>
+      <td style="font-size:12px;">${pemrEsc(r.city)}</td><td style="font-size:12px;">${pemrEsc(r.pm)}</td>
+      <td style="font-size:12px;">${r.pe?pemrEsc(r.pe):'<span style="color:#e74c3c;">Not Assigned</span>'}</td>
+      <td style="font-size:12px;">${pemrEsc(r.size)}</td>
+      <td><span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;white-space:nowrap;">${r.status}</span></td>
+      <td>${r.sev?`<span class="badge" style="background:${ISS_SEV_COL[r.sev]}22;color:${ISS_SEV_COL[r.sev]};border:1px solid ${ISS_SEV_COL[r.sev]}55;white-space:nowrap;"><i class="ti ti-flag-filled" style="font-size:11px;margin-right:3px;"></i>${r.sev}</span>`:'<span style="color:var(--muted);">—</span>'}</td>
+      <td style="font-size:11px;white-space:nowrap;">${r.date?fmtDate(r.date):'—'}</td>
+      <td>${aging}</td>
+      <td style="font-size:11px;color:var(--muted);max-width:260px;overflow:hidden;text-overflow:ellipsis;" title="${pemrEsc(r.desc)}">${pemrEsc(r.desc)||'—'}</td></tr>`;
+  }).join('');
+}
+
+// card / cell click → project-wise summary (grouped by project)
+function issShowProjects(title,id){
+  const list=_issReg[id]||[];
+  const byP={};list.forEach(r=>{(byP[r.pid]=byP[r.pid]||[]).push(r);});
+  const rows=Object.entries(byP).map(([pid,l])=>({pid,l,days:Math.max(-1,...l.map(r=>r.days===null?-1:r.days))})).sort((a,b)=>b.days-a.days).map(({pid,l,days},i)=>{
+    const f=l[0],cnt={};l.forEach(r=>cnt[r.status]=(cnt[r.status]||0)+1);
+    const st=Object.entries(cnt).map(([s,n])=>`<span class="badge" style="background:${ISS_COL[s]}22;color:${ISS_COL[s]};border:1px solid ${ISS_COL[s]}55;margin:1px;">${s} ×${n}</span>`).join('');
+    const esc=pid.replace(/'/g,"\\'"),en=f.name.replace(/'/g,"\\'");
+    return `<tr><td style="color:var(--muted);">${i+1}</td><td><span class="badge bp">${pemrEsc(pid)}</span></td>
+      <td style="font-weight:500;color:#4f8ef7;cursor:pointer;" onclick="openProjectSummaryFor('${esc}','${en}')">${pemrEsc(f.name)}</td>
+      <td style="font-size:12px;">${pemrEsc(f.city)}</td><td style="font-size:12px;">${pemrEsc(f.pm)}</td>
+      <td style="text-align:right;font-weight:600;">${l.length}</td><td>${st}</td>
+      <td>${days<0?'<span style="color:var(--muted);">Closed</span>':days+'d'}</td></tr>`;
+  }).join('');
+  pmvModal(`<div class="pmr-modal" style="max-width:1000px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;">
+      <div><div style="font-size:15px;font-weight:600;">${pemrEsc(title)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${list.length} issue(s) · ${Object.keys(byP).length} project(s) · oldest open issue first</div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button></div>
+    <div class="table-wrap" style="overflow:auto;"><table style="font-size:12px;width:100%;">
+      <thead><tr><th>#</th><th>Project ID</th><th>Project Name</th><th>City</th><th>PM</th><th style="text-align:right;">Issues</th><th>Status</th><th>Oldest open</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="8" class="empty">No issues</td></tr>'}</tbody></table></div></div>`);
+}
+
+// status row click → city-wise and size-wise counts
+function issStatusDetail(status){
+  const l=_issRows.filter(r=>r.status===status),total=l.length||1;
+  const grp=(key,order)=>{
+    const m={};l.forEach(r=>{(m[r[key]]=m[r[key]]||[]).push(r);});
+    const keys=order?order.filter(k=>m[k]):Object.keys(m).sort((a,b)=>m[b].length-m[a].length);
+    return `<table style="font-size:12px;width:100%;"><thead><tr><th>${key==='city'?'City':'Size'}</th><th style="text-align:right;">Issues</th><th style="text-align:right;">%</th></tr></thead><tbody>${keys.map(k=>`<tr style="cursor:pointer;" onclick="issShowProjects('${status} · ${String(k).replace(/'/g,"\\'")}',${issReg(m[k])})"><td>${pemrEsc(k)}</td><td style="text-align:right;font-weight:600;color:${ISS_COL[status]};">${m[k].length}</td><td style="text-align:right;color:var(--muted);">${Math.round(m[k].length/total*100)}%</td></tr>`).join('')}</tbody></table>`;
+  };
+  pmvModal(`<div class="pmr-modal" style="max-width:760px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;">
+      <div><div style="font-size:15px;font-weight:600;">${status} — Breakdown</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${l.length} issue(s) · click a row for the project list</div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button></div>
+    <div style="overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+      <div><div style="font-size:11px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">City-wise</div>${grp('city')}</div>
+      <div><div style="font-size:11px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Size-wise</div>${grp('size',SIZE_CATEGORIES.concat(['—']))}</div>
+    </div></div>`);
+} 
+
+
+  // Full CT Daily Review Tracker records for one project
+function issShowRaw(pid){
+  const h=D.issue.h;
+  const list=issBuildRows().filter(r=>r.pid===pid).sort((a,b)=>(b.date?b.date.getTime():0)-(a.date?a.date.getTime():0));
+  const name=list.length?list[0].name:pid;
+  const iAct=issCol(h,['impactedactivity']),iCat=issCol(h,['issuecategory']),iBlk=issCol(h,['issueblocker']);
+  const sevBadge=s=>s?`<span class="badge" style="background:${ISS_SEV_COL[s]}22;color:${ISS_SEV_COL[s]};border:1px solid ${ISS_SEV_COL[s]}55;white-space:nowrap;"><i class="ti ti-flag-filled" style="font-size:11px;margin-right:3px;"></i>${s}</span>`:'<span class="badge bgr">Not set</span>';
+  const fld=(lbl,val)=>`<div style="background:var(--bg2);border-radius:8px;padding:8px 10px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:3px;">${lbl}</div><div style="font-size:13px;white-space:pre-wrap;word-break:break-word;">${val?pemrEsc(val):'<span style="color:var(--muted);">—</span>'}</div></div>`;
+  const cards=list.map((r,n)=>{
+    const c=ISS_COL[r.status]||'#8b92b0';
+    const v2=i=>i>=0?String(r.raw[i]==null?'':r.raw[i]).trim():'';
+    return `<div class="pemr-card" style="border-left:3px solid ${c};margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <b style="font-size:13px;">Issue ${n+1}</b>
+        <span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;white-space:nowrap;">${r.status}</span>
+        ${sevBadge(r.sev)}
+        <span style="margin-left:auto;font-size:11px;color:var(--muted);">${r.date?fmtDate(r.date):'—'}${r.days!==null?' · '+r.days+'d open':' · Closed'}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;">
+        ${fld('Impacted Activity',v2(iAct))}
+        ${fld('Issue Category',v2(iCat))}
+      </div>
+      ${fld('Issue / Blocker',v2(iBlk))}
+    </div>`;
+  }).join('');
+  const back=window._hrcLast?`<button onclick="hrcShowList(${window._hrcLast[0]},'${window._hrcLast[1]}')" title="Back" style="background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--muted);cursor:pointer;padding:3px 8px;font-size:12px;"><i class="ti ti-arrow-left"></i></button>`:'';
+  pmvModal(`<div class="pmr-modal" style="max-width:720px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">${back}<div><div style="font-size:15px;font-weight:600;">${pemrEsc(name)} — Issues</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${pemrEsc(pid)} · ${list.length} issue(s) · latest first</div></div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div style="overflow:auto;">${cards||'<div class="empty">No records found for this project</div>'}</div>
+  </div>`);
+}
+
   
   
 loadAll();
