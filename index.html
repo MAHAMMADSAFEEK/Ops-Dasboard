@@ -4,9 +4,13 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Ops Dashboard</title>
+ <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('ops-theme')||'dark');}catch(e){}</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<style>
+
+  
+  
+ <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;min-height:100vh;}
 :root{--bg:#0f1117;--bg2:#181c27;--surface:#1e2336;--surface2:#252b40;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);--text:#f0f2f8;--muted:#8b92b0;--accent:#4f8ef7;--radius:10px;--radius-lg:16px;}
@@ -270,6 +274,66 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
 .pmv-c2{position:sticky;left:280px;z-index:4;background:var(--surface);width:64px;min-width:64px;max-width:64px;text-align:center;border-right:2px solid var(--border2);}
 .pmr-table thead th.pmv-c0,.pmr-table thead th.pmv-c1,.pmr-table thead th.pmv-c2{z-index:6;background:var(--surface2);}
 
+
+/* ── Light theme (professional white & blue) ── */
+:root[data-theme="dark"]{color-scheme:dark;}
+:root[data-theme="light"]{color-scheme:light;--bg:#eef2fb;--bg2:#f3f6fc;--surface:#ffffff;--surface2:#f1f5fd;--border:rgba(30,58,138,0.10);--border2:rgba(30,58,138,0.20);--text:#0f1a44;--muted:#64719a;--accent:#2f5fd0;}
+.theme-toggle{font-size:12px;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.theme-toggle:hover{background:var(--surface2);}
+
+/* header */
+[data-theme="light"] .topbar{background:linear-gradient(135deg,#1e3a8a 0%,#2b5cd6 100%);border-bottom:none;box-shadow:0 6px 20px rgba(30,58,138,.28);}
+[data-theme="light"] .topbar .logo{color:#fff;}
+[data-theme="light"] .topbar [style*="var(--muted)"],[data-theme="light"] #last-updated{color:rgba(255,255,255,.78)!important;}
+[data-theme="light"] #status-badge{background:rgba(255,255,255,.16)!important;color:#fff!important;border:1px solid rgba(255,255,255,.35)!important;}
+[data-theme="light"] #user-chip{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.32);}
+[data-theme="light"] #user-chip .role{color:#bcd0ff;}
+[data-theme="light"] .btn-refresh,[data-theme="light"] .logout-btn,[data-theme="light"] .topbar .theme-toggle{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.35);}
+[data-theme="light"] .btn-refresh:hover,[data-theme="light"] .logout-btn:hover,[data-theme="light"] .topbar .theme-toggle:hover{background:rgba(255,255,255,.26);color:#fff;}
+
+/* tabs */
+[data-theme="light"] .tabs{background:transparent;padding:0;gap:6px;}
+[data-theme="light"] .tab{background:#e4ebf9;color:#2a4fb5;opacity:1;border-radius:10px 10px 0 0;border-bottom:3px solid transparent;box-shadow:none;transform:none;}
+[data-theme="light"] .tab i{color:inherit;}
+[data-theme="light"] .tab:hover:not(.active){background:#d6e1f7;opacity:1;}
+[data-theme="light"] .tab.active{background:#fff;color:#0f1a44;border-bottom-color:#2f5fd0;box-shadow:0 -2px 10px rgba(30,58,138,.08);transform:none;}
+
+/* filter bar */
+[data-theme="light"] .pe-filter-bar{background:#fff;border-bottom:1px solid var(--border);box-shadow:0 4px 14px rgba(30,58,138,.07);}
+[data-theme="light"] .pe-filter-group select,[data-theme="light"] .pe-filter-group input[type=date],[data-theme="light"] .pov-ms-control{background:#eef3fd;border-color:#d6e0f5;color:var(--text);}
+[data-theme="light"] .pov-ms-panel,[data-theme="light"] .proj-dropdown{box-shadow:0 10px 28px rgba(30,58,138,.18);}
+
+/* cards */
+[data-theme="light"] .card,[data-theme="light"] .metric{background:#fff;border:1px solid #e3eaf7;box-shadow:0 1px 2px rgba(30,58,138,.05),0 6px 18px rgba(30,58,138,.06);}
+[data-theme="light"] .card-title{color:var(--text);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:12px;border-left:4px solid #2f5fd0;padding-left:10px;}
+[data-theme="light"] .card-title i{color:#2f5fd0;}
+[data-theme="light"] .metric .mval{color:var(--text);color:color-mix(in srgb,var(--mc,#2f5fd0) 78%,#0f1a44);}
+[data-theme="light"] .pmr-modal{box-shadow:0 18px 50px rgba(15,26,68,.28);}
+[data-theme="light"] .pmr-modal-ov{background:rgba(15,26,68,.45);}
+[data-theme="light"] .login-card{box-shadow:0 14px 44px rgba(30,58,138,.20);}
+[data-theme="light"] #overlay{background:rgba(238,242,251,.97);}
+
+/* status chips and calendar cells */
+[data-theme="light"] .bg{color:#1f8a5b;}[data-theme="light"] .bb{color:#2a56c6;}[data-theme="light"] .br{color:#c23a2e;}
+[data-theme="light"] .bo{color:#b9770e;}[data-theme="light"] .bp{color:#6d4bd1;}[data-theme="light"] .bgr{color:#64719a;}
+[data-theme="light"] .pmr-red{color:#c23a2e;}[data-theme="light"] .pmr-orange{color:#b9770e;}[data-theme="light"] .pmr-green{color:#1f8a5b;}
+[data-theme="light"] .pmr-teal{color:#0e7490;}[data-theme="light"] .pmr-grey{color:#64719a;}[data-theme="light"] .pmr-hold{color:#6d4bd1;}
+[data-theme="light"] .pmr-closed{color:#1e3a8a;}
+[data-theme="light"] [style*="rgba(255,255,255,0.08)"]{background:rgba(30,58,138,.10)!important;}
+
+/* darker text shades for the vivid inline colours (readable on white) */
+[data-theme="light"] [style*="color:#34c98a"]{color:#1f8a5b!important;}
+[data-theme="light"] [style*="color:#e74c3c"],[data-theme="light"] [style*="color:#ff7a6b"]{color:#c23a2e!important;}
+[data-theme="light"] [style*="color:#f5a623"]{color:#b9770e!important;}
+[data-theme="light"] [style*="color:#4f8ef7"]{color:#2a56c6!important;}
+[data-theme="light"] [style*="color:#9b6dff"],[data-theme="light"] [style*="color:#b79cff"]{color:#6d4bd1!important;}
+[data-theme="light"] [style*="color:#3bc0d8"]{color:#0e7490!important;}
+[data-theme="light"] [style*="color:#e0518a"]{color:#be185d!important;}
+[data-theme="light"] [style*="color:#e8743b"]{color:#c2561a!important;}
+[data-theme="light"] [style*="color:#0d9488"]{color:#0f766e!important;}
+[data-theme="light"] [style*="color:#8b92b0"]{color:#64719a!important;}
+[data-theme="light"] [style*="color:#93b4ff"]{color:#1e3a8a!important;}
+
 </style>
 </head>
 <body>
@@ -283,6 +347,7 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
 
   
 <div id="login-overlay" class="hidden">
+    <button class="theme-toggle" onclick="toggleTheme()" style="position:absolute;top:16px;right:16px;"></button>
   <div class="login-card">
     <div class="login-logo"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToL7ghMGlVSZZldEAR63B8XCpsOUoKx00ATeQzw6OJACIfjw61nHrhpOQ9&s=10" alt="logo" style="height:28px;width:auto;border-radius:6px;"/> Ops Dashboard</div>
     <div class="login-sub">Sign in to continue</div>
@@ -304,6 +369,7 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
     <span id="user-chip" style="display:none;"></span>
     <span id="status-badge">Loading…</span>
     <span id="last-updated"></span>
+        <button class="theme-toggle" onclick="toggleTheme()"></button>
     <button class="btn-refresh" onclick="loadAll()"><i class="ti ti-refresh"></i> Refresh</button>
     <button class="logout-btn" id="logout-btn" style="display:none;" onclick="doLogout()"><i class="ti ti-logout"></i> Logout</button>
   </div>
@@ -970,6 +1036,16 @@ function parseSheet(gid,sid){return new Promise((res,rej)=>{
       res(r.data);},
     error:e=>{clearTimeout(timer);rej(e);}});
 });}
+
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  try{localStorage.setItem('ops-theme',t);}catch(e){}
+  document.querySelectorAll('.theme-toggle').forEach(b=>{b.innerHTML=t==='light'?'<i class="ti ti-moon"></i> Dark':'<i class="ti ti-sun"></i> Light';});
+}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light');}
+document.addEventListener('DOMContentLoaded',()=>applyTheme(document.documentElement.getAttribute('data-theme')||'dark'));
+
+  
 function setOverlay(txt){document.getElementById('overlay-txt').textContent=txt;}
 
   let _syncShown=0,_syncTarget=0,_syncTimer=null;
@@ -2401,7 +2477,7 @@ if(_povMS.pname.size&&!_povMS.pname.has(lv(x,LEAD_COL.PNAME)))return false;
   document.getElementById('pov-city-table').innerHTML=povCityTable(cityCount,citySize);
   const pieEl=document.getElementById('pov-sizecat-chart'); if(pieEl)pieEl.innerHTML=povRenderSizePie(sizeCatCount);
 document.getElementById('pov-delay-report').innerHTML=povDelayReport(updCounts,totalProjects);
-  document.getElementById('pov-head').innerHTML='<tr><th>#</th><th>City</th><th>Project ID</th><th>Project Name</th><th>Size Category</th><th>Capacity</th><th>City Manager</th><th>CPM</th><th>PE</th><th>Project timeline start from</th><th>Installation start date</th><th>Installation completed date</th><th>Installation TAT</th><th>Project TAT</th><th>Completion %</th><th>Installation Status</th><th>Project Status</th><th>Remarks</th><th>Aging</th><th>Phase Summary</th><th>Detailed Report</th></tr>';
+    document.getElementById('pov-head').innerHTML='<tr><th>#</th><th>City</th><th>Project ID</th><th>Project Name</th><th>Size Category</th><th>Capacity</th><th>City Manager</th><th>CPM</th><th>PE</th><th>Project timeline start from</th><th>Installation start date</th><th>Installation completed date</th><th>Installation TAT</th><th>Project TAT</th><th>Completion %</th><th>Installation Status</th><th>Project Status</th><th>Remarks</th><th>Aging</th><th>Phase Summary</th><th>Project Overview</th><th>Detailed Report</th></tr>';
   const tbody=document.getElementById('pov-body');
   if(!rows.length){tbody.innerHTML='<tr><td colspan="20" class="empty">No projects match the selected filters</td></tr>';return;}
   const sortedRows=[...rows].sort((a,b)=>{const c=lv(a,LEAD_COL.CITY).localeCompare(lv(b,LEAD_COL.CITY));if(c!==0)return c;return lv(a,LEAD_COL.PNAME).localeCompare(lv(b,LEAD_COL.PNAME));});
@@ -2435,6 +2511,7 @@ let projBadge;
     const pctCell=`<div style="display:flex;align-items:center;gap:8px;min-width:90px;"><div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden;"><div style="width:${Math.min(pct,100)}%;height:100%;background:${pctColor};border-radius:3px;"></div></div><span style="font-size:12px;font-weight:600;color:${pctColor};min-width:30px;text-align:right;">${pct}%</span></div>`;
     const reportLink=`<a onclick="openProjectSummaryFor('${escId}','${escName}')" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(79,142,247,0.15);color:#4f8ef7;border:1px solid rgba(79,142,247,0.3);border-radius:6px;font-size:11px;font-weight:500;text-decoration:none;cursor:pointer;"><i class="ti ti-external-link" style="font-size:12px;"></i>View Summary</a>`;
     const phaseLink=`<a onclick="openPhaseSummary('${escId}','${escName}')" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(155,109,255,0.15);color:#9b6dff;border:1px solid rgba(155,109,255,0.3);border-radius:6px;font-size:11px;font-weight:500;text-decoration:none;cursor:pointer;"><i class="ti ti-stack-2" style="font-size:12px;"></i>Phase Summary</a>`;
+     const overviewLink=`<a onclick="openProjectOverview('${escId}')" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:rgba(52,201,138,0.15);color:#34c98a;border:1px solid rgba(52,201,138,0.35);border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;cursor:pointer;"><i class="ti ti-layout-dashboard" style="font-size:12px;"></i>Overview</a>`;
     return `<tr>
       <td style="color:var(--muted)">${i+1}</td>
       <td style="font-size:12px">${city}</td>
@@ -2470,11 +2547,180 @@ let projBadge;
       <td>${projBadge}</td>
 <td style="font-size:11px;color:var(--muted)">—</td>
       <td>${(()=>{const a=povAgingOf(x);if(!a)return '<span style="color:var(--muted);font-size:11px;">—</span>';const c=povAgingColor(a);return `<span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;font-weight:600;white-space:nowrap;">${a}</span>`;})()}</td>
-            <td>${phaseLink}</td>
-      <td>${reportLink}</td> 
+      <td>${phaseLink}</td>
+      <td>${overviewLink}</td>
+      <td>${reportLink}</td>
     </tr>`;
   }).join('');
 }
+
+
+ function openProjectOverview(pid){
+  const x=D.lead.r.find(r=>lv(r,LEAD_COL.PID)===pid);if(!x)return;
+  const E=pemrEsc,name=lv(x,LEAD_COL.PNAME)||pid;
+  const m=computeProjectMetrics(pid),hi=povHoldInfo(x),dl=povComputeDelay(x);
+  const todayMs=pmvDMs(new Date());
+  const cat=sizeCategoryOf(x),catColor=SIZE_CAT_COLORS[cat];
+  const stTag=povProjectStatuses(x)[0],stCol=STAGE_STATUS_COLORS[stTag]||'#8b92b0';
+  const aging=povAgingOf(x);
+  const chName=lv(x,LEAD_COL.CLUSTER),pmName=lv(x,LEAD_COL.CITYMGR),peName=lv(x,LEAD_COL.PE);
+  const poStart=parseDate(lv(x,37)),poDays=parseFloat(lv(x,24))||0;
+  const poExp=(poStart&&poDays)?new Date(poStart.getTime()+poDays*86400000):null;
+  const vDate=vendorFinalizeDate(x);
+  const iCHA=ci(D.lead.h,'Clusterheadassignedon','clusterheadassigned');
+  const chDate=iCHA>=0?parseDate(lv(x,iCHA)):null;
+
+  // ── people & site activity ──
+  const emailIdx=ci(D.pe.h,'Mailid','email','mail');
+  const emailToPE={};
+  if(emailIdx>=0)D.pe.r.forEach(r=>{const em=v(r,emailIdx).toLowerCase().trim(),nm=v(r,1);if(em&&nm)emailToPE[em]=nm;});
+  const attRows=D.att.r.filter(r=>v(r,ATT_COL.PID)===pid);
+  const peMap={},allDays=new Set(),uids=new Set();
+  const tot={onsite:0,without:0,noact:0};
+  attRows.forEach(r=>{
+    const uid=v(r,ATT_COL.UID);if(uid)uids.add(uid);
+    const d=parseDate(v(r,ATT_COL.DATE));if(!d)return;
+    const ms=pmvDMs(d),em=v(r,ATT_COL.EMAIL).toLowerCase().trim(),nm=emailToPE[em]||em||'Unknown';
+    const o=peMap[nm]=peMap[nm]||{name:nm,days:new Set(),first:ms,last:ms,onsite:0,without:0,noact:0};
+    o.days.add(ms);allDays.add(ms);if(ms<o.first)o.first=ms;if(ms>o.last)o.last=ms;
+    const st=v(r,ATT_COL.M).toLowerCase();
+    if(st==='onsite visit'){o.onsite++;tot.onsite++;}else if(st==='without visit update'){o.without++;tot.without++;}else if(st==='no activity'){o.noact++;tot.noact++;}
+  });
+  const peList=Object.values(peMap).sort((a,b)=>b.days.size-a.days.size);
+  const dayArr=[...allDays].sort((a,b)=>a-b);
+
+  // ── TBT / vendors / manpower ──
+  const tbtRows=D.tbt.r.filter(r=>uids.has(v(r,PMR_TBT.UID)));
+  let tech=0,help=0;const vendors={};
+  tbtRows.forEach(r=>{
+    const t=parseFloat(v(r,3))||0,h2=parseFloat(v(r,4))||0;tech+=t;help+=h2;
+    const vn=v(r,1)||'—',d=parseDate(v(r,PMR_TBT.DATE));
+    const o=vendors[vn]=vendors[vn]||{name:vn,days:new Set(),mp:0};
+    if(d)o.days.add(pmvDMs(d));o.mp+=t+h2;
+  });
+  const vendList=Object.values(vendors).sort((a,b)=>b.days.size-a.days.size);
+
+  // ── phase journey ──
+  const pt=povComputePhaseTAT(x);
+  const phaseOrder=[];const seen=new Set();
+  D.workplan.r.filter(r=>(r[0]||'').trim()).forEach(r=>{const ph=(r[2]||'').trim()||'(No Phase)';if(!seen.has(ph)){seen.add(ph);phaseOrder.push(ph);}});
+  const maxDays=Math.max(1,...phaseOrder.map(p=>pt.phases[p]?pt.phases[p].days:0));
+
+  // ── PM review ──
+  const ph2=D.pmr.h;
+  const fx=(names,def)=>{for(const n of names){const i=ph2.findIndex(z=>issNorm(z)===n);if(i>=0)return i;}return def;};
+  const iD=fx(['date'],0),iP=fx(['projectid'],2),iIC=fx(['icok'],4),iMat=fx(['materialissue'],5);
+  const rvDay={};
+  D.pmr.r.forEach(r=>{if(v(r,iP)!==pid)return;const d=povParseHoldDate(v(r,iD));if(!d)return;const ms=pmvDMs(d);const ok=/^yes$/i.test(v(r,iIC))&&/^no$/i.test(v(r,iMat));if(rvDay[ms]!==true)rvDay[ms]=ok;});
+  const rvKeys=Object.keys(rvDay).map(Number).sort((a,b)=>a-b);
+  const rvOk=rvKeys.filter(k=>rvDay[k]).length;
+
+  // ── PM site visits ──
+  const visits=[].concat(...Object.values(pmvBuildVisits())).filter(it=>it.pid===pid);
+  const visDone=visits.filter(it=>it.visited).length;
+
+  // ── issues ──
+  const iss=issBuildRows().filter(r=>r.pid===pid).sort((a,b)=>(b.date?b.date.getTime():0)-(a.date?a.date.getTime():0));
+  const issDone=iss.filter(r=>r.status==='Completed').length;
+  const sevBadge=s=>s?`<span class="badge" style="background:${ISS_SEV_COL[s]}22;color:${ISS_SEV_COL[s]};border:1px solid ${ISS_SEV_COL[s]}55;white-space:nowrap;"><i class="ti ti-flag-filled" style="font-size:11px;margin-right:3px;"></i>${s}</span>`:'<span style="color:var(--muted);">—</span>';
+
+  // ── journey timeline ──
+  const ev=[];
+  const add=(d,label,sub,color,icon)=>{if(d)ev.push({d,label,sub:sub||'',color,icon});};
+  add(chDate,'Cluster head assigned',chName,'#4f8ef7','ti-user-check');
+  add(poStart,'PO / project timeline start',poDays?poDays+' days as per PO':'','#4f8ef7','ti-file-invoice');
+  add(vDate,'Vendor finalized','','#8b92b0','ti-building-store');
+  if(dayArr.length)add(new Date(dayArr[0]),'First site update',(peList[0]&&peList.length===1)?peList[0].name:'','#3bc0d8','ti-map-pin');
+  add(m.startDate,'Installation started','Structure shifting','#f5a623','ti-tool');
+  hi.events.forEach(e=>add(e.date,e.type==='hold'?'Put on hold':e.type==='unhold'?'Resumed':'Cancelled',e.remark,e.type==='hold'?'#9b6dff':e.type==='unhold'?'#34c98a':'#e0518a',e.type==='hold'?'ti-player-pause':e.type==='unhold'?'ti-player-play':'ti-ban'));
+  if(m.installStatus==='done')add(m.endDate,'Installation completed',m.tat!==null?'Install TAT '+m.tat+' days':'','#34c98a','ti-circle-check');
+   if(m.status==='done'){const pcd=[m.lastAttDate,m.lastDate,m.endDate].filter(Boolean).sort((a,b)=>b-a)[0];add(pcd,'Project completed',dl?'Project TAT '+dl.projTat+' days':'','#0d9488','ti-flag-check');}
+  else add(m.lastActivity,'Last update','','#3bc0d8','ti-history');
+  add(poExp,'Expected closure (per PO)','','#9b6dff','ti-calendar-due');
+   const ORD=['Cluster head assigned','PO / project timeline start','Vendor finalized','First site update','Installation started','Put on hold','Resumed','Cancelled','Installation completed','Project completed','Last update','Expected closure (per PO)'];
+  ev.sort((a,b)=>(pmvDMs(a.d)-pmvDMs(b.d))||(ORD.indexOf(a.label)-ORD.indexOf(b.label)));
+  let prev=null;
+  const tlHtml=ev.map(e=>{
+    const gap=prev?Math.round((pmvDMs(e.d)-pmvDMs(prev))/86400000):null;prev=e.d;
+    const future=pmvDMs(e.d)>todayMs;
+    return `<div style="position:relative;padding:0 0 14px 0;">
+      <span style="position:absolute;left:-26px;top:1px;width:20px;height:20px;border-radius:50%;background:${future?'var(--surface)':e.color+'22'};border:2px ${future?'dashed':'solid'} ${e.color};display:flex;align-items:center;justify-content:center;"><i class="ti ${e.icon}" style="font-size:11px;color:${e.color};"></i></span>
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;"><b style="font-size:12px;">${E(e.label)}</b><span style="font-size:11px;color:var(--muted);">${fmtDate(e.d)}${future?' · upcoming':''}</span>${gap!==null&&gap>0?`<span style="font-size:10px;color:var(--muted);">+${gap}d</span>`:''}</div>
+      ${e.sub?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${E(e.sub)}</div>`:''}</div>`;
+  }).join('');
+
+  // ── render helpers ──
+  const sect=(icon,t,inner)=>`<div style="margin-top:18px;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;padding-left:8px;border-left:3px solid #4f8ef7;display:flex;align-items:center;gap:6px;"><i class="ti ${icon}"></i>${t}</div>${inner}</div>`;
+  const person=(icon,role,nm,col)=>`<div style="flex:1;min-width:180px;background:var(--bg2);border-radius:10px;padding:10px 12px;border-left:3px solid ${col};"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;align-items:center;gap:6px;"><i class="ti ${icon}" style="color:${col};"></i>${role}</div><div style="font-size:13px;font-weight:600;margin-top:4px;">${nm?E(nm):'<span style="color:#e74c3c;">Not assigned</span>'}</div></div>`;
+  const chip=(lbl,val,col)=>`<div style="background:${col}14;border:1px solid ${col}40;border-radius:8px;padding:6px 12px;min-width:92px;"><div style="font-size:16px;font-weight:700;color:${col};">${val}</div><div style="font-size:10px;color:var(--muted);">${lbl}</div></div>`;
+  const dash='<span style="color:var(--muted);">—</span>';
+
+  const kpis=
+    metricWithBar('ti-chart-donut','Completion',m.weightedPct+'%','Workplan weighted','#34c98a',m.weightedPct,'#34c98a')+
+    metric('ti-clock-play','Project TAT',dl?dl.projTat+'d':'—',dl?(dl.delayBy>0?`${dl.delayBy}d ${dl.isDone?'late':'delayed'} · PO ${dl.poDays}d`:`On time · PO ${dl.poDays}d`):'No PO data',dl&&dl.delayBy>0?'#e74c3c':'#4f8ef7')+
+    metric('ti-tool','Installation TAT',m.tat!==null?m.tat+'d':'—',m.installStatus==='done'?'Completed':m.installStatus==='wip'?'Running':'Not started','#f5a623')+
+    metric('ti-history','Last update',m.lastActivity?Math.floor((todayMs-pmvDMs(m.lastActivity))/86400000)+'d ago':'Never',m.lastActivity?fmtDate(m.lastActivity):'','#3bc0d8')+
+    metric('ti-users','PEs worked',peList.length,peName?'Current: '+peName:'No PE assigned','#9b6dff')+
+    metric('ti-bug','Issues',iss.length,iss.length?`${issDone} resolved · ${iss.length-issDone} open`:'None logged','#e0518a');
+
+  const peRows=peList.map(p=>`<tr><td style="font-weight:500;">${E(p.name)}</td><td>${p.name===peName?'<span class="badge bg">Current PE</span>':'<span class="badge bgr">Earlier</span>'}</td><td style="text-align:right;font-weight:600;">${p.days.size}</td><td style="font-size:11px;white-space:nowrap;">${fmtDate(new Date(p.first))}</td><td style="font-size:11px;white-space:nowrap;">${fmtDate(new Date(p.last))}</td><td style="text-align:center;color:#34c98a;">${p.onsite||'—'}</td><td style="text-align:center;color:#3bc0d8;">${p.without||'—'}</td><td style="text-align:center;color:#f5a623;">${p.noact||'—'}</td></tr>`).join('');
+  const peTable=peList.length?`<div class="table-wrap"><table style="font-size:12px;width:100%;"><thead><tr><th>PE</th><th>Role</th><th style="text-align:right;">Days</th><th>First</th><th>Last</th><th style="text-align:center;">Onsite</th><th style="text-align:center;">Without visit</th><th style="text-align:center;">No activity</th></tr></thead><tbody>${peRows}</tbody></table></div>`:'<div class="empty" style="padding:14px;">No site updates yet.</div>';
+
+  const phaseRows=phaseOrder.map((ph,i)=>{
+    const t=pt.phases[ph];
+    const w=t?Math.max(4,Math.round(t.days/maxDays*100)):0;
+    return `<tr><td style="color:var(--muted);text-align:center;">${i+1}</td><td style="font-weight:500;">${E(ph)}</td><td style="font-size:11px;white-space:nowrap;">${t?fmtDate(t.start):dash}</td><td style="font-size:11px;white-space:nowrap;">${t?fmtDate(t.end):dash}</td><td style="min-width:130px;">${t?`<div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:${w}%;height:100%;background:#4f8ef7;"></div></div><b style="font-size:11px;min-width:30px;text-align:right;">${t.days}d</b></div>`:'<span class="badge bgr">Not started</span>'}</td></tr>`;
+  }).join('');
+
+  const vendRows=vendList.map(v2=>`<tr><td style="font-weight:500;">${E(v2.name)}</td><td style="text-align:right;">${v2.days.size}</td><td style="text-align:right;font-weight:600;">${v2.mp}</td></tr>`).join('');
+
+  const issRows=iss.map((r,n)=>{
+    const c=ISS_COL[r.status]||'#8b92b0';
+    return `<tr><td style="color:var(--muted);">${n+1}</td><td style="font-size:11px;white-space:nowrap;">${r.date?fmtDate(r.date):'—'}</td><td><span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;white-space:nowrap;">${r.status}</span></td><td>${sevBadge(r.sev)}</td><td style="font-weight:600;">${r.tat!=null?r.tat+'d':'—'}${r.status!=='Completed'&&r.tat!=null?' <span style="font-size:10px;color:var(--muted);">running</span>':''}</td><td style="font-size:12px;max-width:340px;white-space:normal;">${E(r.desc)||'—'}</td></tr>`;
+  }).join('');
+
+  const esc=pid.replace(/'/g,"\\'"),en=name.replace(/'/g,"\\'");
+  pmvModal(`<div class="pmr-modal" style="max-width:1100px;max-height:94vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;">${E(name)}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
+          <span class="badge bp">${E(pid)}</span>
+          <span style="font-size:12px;color:var(--muted);"><i class="ti ti-map-pin"></i> ${E(lv(x,LEAD_COL.CITY))||'—'}</span>
+          <span style="font-size:12px;color:var(--muted);">${E(lv(x,LEAD_COL.SIZE))||'—'} kW</span>
+          <span class="badge" style="background:${catColor}22;color:${catColor};border:1px solid ${catColor}55;">${cat}</span>
+          <span class="badge" style="background:${stCol}22;color:${stCol};border:1px solid ${stCol}55;">${E(stTag)}</span>
+          ${aging?`<span class="badge" style="background:${povAgingColor(aging)}22;color:${povAgingColor(aging)};border:1px solid ${povAgingColor(aging)}55;">${aging}</span>`:''}
+          ${dl&&dl.delayBy>0&&!dl.isDone?`<span class="badge br">⚠ ${dl.delayBy}d delayed</span>`:''}
+        </div>
+      </div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div style="overflow:auto;padding-right:4px;">
+      <div class="metrics" style="margin-bottom:0;">${kpis}</div>
+
+      ${sect('ti-sitemap','Ownership',`<div style="display:flex;gap:10px;flex-wrap:wrap;">${person('ti-users-group','Cluster head',chName,'#4f8ef7')}${person('ti-user-cog','Project manager (city manager)',pmName,'#9b6dff')}${person('ti-user','Project engineer (current)',peName,'#f5a623')}</div>`)}
+
+      ${sect('ti-timeline','Project journey',`<div style="margin-left:10px;border-left:2px solid var(--border2);padding-left:26px;padding-top:4px;">${tlHtml||'<div class="empty" style="padding:14px;">No dated milestones.</div>'}</div>`)}
+
+      ${sect('ti-activity','Site activity',`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">${chip('Days updated',allDays.size,'#34c98a')}${chip('Onsite visits',tot.onsite,'#34c98a')}${chip('Without visit',tot.without,'#3bc0d8')}${chip('No activity',tot.noact,'#f5a623')}${chip('TBT reports',tbtRows.length,'#9b6dff')}${chip('DPR entries',m.dprCount,'#4f8ef7')}${chip('Manpower (days)',tech+help,'#f5a623')}${chip('Vendors',vendList.length,'#8b92b0')}</div>${peTable}`)}
+
+      ${vendList.length?sect('ti-building-store','Vendors on site',`<div class="table-wrap"><table style="font-size:12px;width:100%;"><thead><tr><th>Vendor</th><th style="text-align:right;">Days</th><th style="text-align:right;">Manpower</th></tr></thead><tbody>${vendRows}</tbody></table></div>`):''}
+
+      ${sect('ti-stack-2','Phase-wise progress',`<div class="table-wrap"><table style="font-size:12px;width:100%;"><thead><tr><th style="width:34px;text-align:center;">#</th><th>Phase</th><th>Start</th><th>End</th><th>Duration</th></tr></thead><tbody>${phaseRows||'<tr><td colspan="5" class="empty">No workplan data</td></tr>'}</tbody></table></div>`)}
+
+      ${sect('ti-user-search','PM review and site visits',`<div style="display:flex;gap:8px;flex-wrap:wrap;">${chip('Review days',rvKeys.length,'#4f8ef7')}${chip('Review completed',rvOk,'#34c98a')}${chip('Review pending',rvKeys.length-rvOk,'#f5a623')}${chip('Last review',rvKeys.length?fmtDate(new Date(rvKeys[rvKeys.length-1])):'—','#8b92b0')}${chip('PM site visits',visDone+'/'+visits.length,'#3bc0d8')}</div>`)}
+
+      ${sect('ti-bug','Issues',iss.length?`<div class="table-wrap"><table style="font-size:12px;width:100%;"><thead><tr><th>#</th><th>Started</th><th>Status</th><th>Severity</th><th>Issue TAT</th><th>Issue</th></tr></thead><tbody>${issRows}</tbody></table></div>`:'<div class="empty" style="padding:14px;">No issues logged for this project.</div>')}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+      <button class="pe-clr-btn" onclick="openPhaseSummary('${esc}','${en}')"><i class="ti ti-stack-2" style="font-size:12px;"></i> Phase summary</button>
+      <button class="pe-clr-btn" onclick="pemrCloseDay();openProjectSummaryFor('${esc}','${en}')"><i class="ti ti-external-link" style="font-size:12px;"></i> Full project summary</button>
+    </div>
+  </div>`);
+}
+
+ 
 
 function openProjectSummaryFor(projId,projName){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -7176,7 +7422,14 @@ function pmvShowDate(dMs){
   const dt=new Date(dMs);
   const label=dt.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'short',year:'numeric'});
   const cnt={done:0,ongoing:0,pending:0,leave:0,none:0,future:0};let tE=0,tU=0;
-  const rows=c.pms.map((pm,i)=>{
+  const _SO={pending:0,ongoing:1,done:2,leave:3,none:4,future:4};
+  const rows=c.pms.map((pm,i)=>({pm,i}))
+    .sort((a,b)=>{
+      const sa=c.stat(a.pm,dMs).status,sb=c.stat(b.pm,dMs).status;
+      return (_SO[sa]-_SO[sb])
+        ||[...a.pm.cities].sort()[0].localeCompare([...b.pm.cities].sort()[0])
+        ||a.pm.name.localeCompare(b.pm.name);
+    }).map(({pm,i})=>{
     const s=c.stat(pm,dMs);cnt[s.status]++;tE+=s.exp.length;tU+=s.upd.length;
     const cfg=PMV_STATUS[s.status];
     const lab=(s.status==='none'||s.status==='future')?'<span class="badge bgr">Nothing expected</span>':`<span class="badge ${cfg.badge}">${cfg.label}</span>`;
@@ -7558,35 +7811,35 @@ function renderISSDetail(){
       <td>${pbadge}</td>
       <td>${tatCell}</td>
       <td>${ageBadge(p.oldest)}</td></tr>`;
-    if(!exp)return main;
+
+       if(!exp)return main;
     const subs=[...p.l].sort((a,b)=>((a.status==='Completed')-(b.status==='Completed'))||((b.date?b.date.getTime():0)-(a.date?a.date.getTime():0)));
-    const cards=subs.map((r,n)=>{
+    const iAct=issCol(hdrs,['impactedactivity']),iCat=issCol(hdrs,['issuecategory']);
+    const g=(r,k)=>k>=0?String(r.raw[k]==null?'':r.raw[k]).trim():'';
+    const dash='<span style="color:var(--muted);">—</span>';
+    const lh=t=>`<td style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 12px;">${t}</td>`;
+    const subHead=`<tr style="background:rgba(79,142,247,0.05);">${lh('')}${lh('Issue')}${lh('Issue / Blocker')}${lh('Impacted Activity')}${lh('Category')}${lh('Raised on')}${lh('Severity')}${lh('')}${lh('Completed on')}${lh('Status')}${lh('Issue TAT')}${lh('Age')}</tr>`;
+    const subRows=subs.map((r,n)=>{
       const c=ISS_COL[r.status];
-      const tatTxt=r.tat==null?'—':r.tat+' days'+(r.status!=='Completed'?' (running)':'');
-      const HIDE=['issueraisedby','leadid','sseid','sitename','dadate','projectstartdate','pe','pm','ch','uniqueid','projectid','projectname'];
-      const fields=hdrs.map((hd,k)=>{
-        if(HIDE.includes(issNorm(hd)))return '';
-        const val=String(r.raw[k]==null?'':r.raw[k]).trim();
-        if(!val)return '';
-        const isUrl=/^https?:\/\//i.test(val);
-        return `<div style="flex:0 0 auto;min-width:120px;max-width:260px;padding:0 14px 0 0;margin-right:14px;border-right:1px solid var(--border);"><div style="font-size:10px;color:var(--muted);">${pemrEsc(hd)}</div><div style="font-size:12px;white-space:pre-wrap;word-break:break-word;">${isUrl?`<a href="${pemrEsc(val)}" target="_blank" rel="noopener" style="color:#4f8ef7;">${pemrEsc(val.length>50?val.slice(0,50)+'…':val)}</a>`:pemrEsc(val)}</div></div>`;
-      }).join('');
-      return `<div style="border-bottom:1px solid var(--border);padding:8px 0 10px;margin-bottom:4px;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-          <b style="font-size:12px;">Issue ${n+1}</b>
-          <span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;white-space:nowrap;">${r.status}</span>
-          ${sevBadge(r.sev)}
-          <span style="font-size:11px;color:var(--muted);">Started <b style="color:var(--text);">${r.date?fmtDate(r.date):'—'}</b></span>
-          <span style="font-size:11px;color:var(--muted);">Completed <b style="color:var(--text);">${r.status==='Completed'?(r.endD?fmtDate(r.endD):'—'):'Open'}</b></span>
-          <span style="font-size:11px;color:var(--muted);">Issue TAT <b style="color:#4f8ef7;">${tatTxt}</b></span>
-        </div>
-         <div style="display:flex;flex-wrap:nowrap;overflow-x:auto;padding:2px 0 4px;">${fields}</div>
-      </div>`;
+      const tatTxt=r.tat==null?'—':r.tat+'d'+(r.status!=='Completed'?' <span style="font-size:10px;color:var(--muted);">running</span>':'');
+      const bg='background:rgba(79,142,247,0.03);';
+      return `<tr style="${bg}">
+        <td style="border-left:3px solid #4f8ef7;color:var(--muted);text-align:center;font-size:11px;">${i+1}.${n+1}</td>
+        <td><span class="badge bgr">Issue ${n+1}</span></td>
+        <td style="font-size:12px;white-space:normal;min-width:240px;max-width:360px;line-height:1.45;">${pemrEsc(r.desc)||dash}</td>
+        <td style="font-size:12px;white-space:normal;">${pemrEsc(g(r,iAct))||dash}</td>
+        <td style="font-size:12px;white-space:normal;">${pemrEsc(g(r,iCat))||dash}</td>
+        <td style="font-size:12px;white-space:nowrap;">${r.date?fmtDate(r.date):dash}</td>
+        <td>${sevBadge(r.sev)}</td>
+        <td></td>
+        <td style="font-size:12px;white-space:nowrap;">${r.status==='Completed'?(r.endD?fmtDate(r.endD):'—'):'<span style="color:#f5a623;">Open</span>'}</td>
+        <td><span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55;white-space:nowrap;">${r.status}</span></td>
+        <td style="font-size:12px;font-weight:600;color:#4f8ef7;">${tatTxt}</td>
+        <td>${ageBadge(r.days)}</td></tr>`;
     }).join('');
-    const sub=`<tr><td></td><td colspan="11" style="padding:8px 0 14px 24px;border-left:3px solid #4f8ef7;">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;">All issues for ${pemrEsc(f.name)} (${p.total}) · total issue TAT ${p.tatKnown?p.tatSum+' days':'—'} · CT Daily Review Tracker</div>
-      ${cards}</td></tr>`;
-    return main+sub;
+    return main+subHead+subRows;
+
+   
   }).join('');
 }
   
