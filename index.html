@@ -544,6 +544,7 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
       <div class="pe-filter-group"><label>Project Name</label><div class="pov-ms" id="pov-ms-pname-prep"></div></div>
       <div class="pe-filter-group"><label>Project ID</label><div class="pov-ms" id="pov-ms-pid-prep"></div></div>
       <div class="pe-filter-group"><label>Aging</label><div class="pov-ms" id="pov-ms-aging-prep"></div></div>
+     <div class="pe-filter-group"><label>Delay Status</label><div class="pov-ms" id="pov-ms-delay-prep"></div></div>
       <div class="pe-fdivider"></div>
       <div class="pe-filter-actions"><span class="spacer"></span><button class="pe-clr-btn" onclick="clearPOVFilters()"><i class="ti ti-x" style="font-size:12px;"></i> Clear Filters</button></div>
     </div>
@@ -726,16 +727,24 @@ tr.pmr-row-delay td.pmr-c0{box-shadow:inset 3px 0 0 #e74c3c;}
       <div class="metrics" id="iss-metrics" style="grid-template-columns:repeat(4,minmax(110px,1fr)) minmax(250px,1.6fr);align-items:stretch;"></div>
 
       <div class="charts-grid" style="grid-template-columns:1fr 1fr 1.5fr;align-items:start;">
-        <div class="card"><div class="card-title"><i class="ti ti-list-details"></i> Status-wise <span style="font-size:11px;font-weight:400;">· click for City / Size split</span></div><div id="iss-status"></div></div>
-        <div class="card"><div class="card-title"><i class="ti ti-clock-exclamation"></i> Aging <span style="font-size:11px;font-weight:400;">· open issues only</span></div><div id="iss-aging"></div></div>
-        <div class="card"><div class="card-title"><i class="ti ti-user-cog"></i> PM-wise Issues</div><div class="table-wrap" id="iss-pm"></div></div>
+        <div>
+          <div class="card"><div class="card-title"><i class="ti ti-list-details"></i> Status-wise <span style="font-size:11px;font-weight:400;">· click for City / Size split</span></div><div id="iss-status"></div></div>
+          <div class="card"><div class="card-title"><i class="ti ti-clock-exclamation"></i> Aging <span style="font-size:11px;font-weight:400;">· open issues only</span></div><div id="iss-aging"></div></div>
+        </div>
+        <div>
+          <div class="card"><div class="card-title"><i class="ti ti-category"></i> Category-wise <span style="font-size:11px;font-weight:400;">· click for Impacted Activity split</span></div><div class="table-wrap" id="iss-cat"></div></div>
+          <div class="card"><div class="card-title"><i class="ti ti-building"></i> City-wise <span style="font-size:11px;font-weight:400;">· escalated vs closed · click a bar for the project list</span></div><div id="iss-city-chart"></div></div>
+        </div>
+        <div>
+          <div class="card"><div class="card-title"><i class="ti ti-user-cog"></i> PM-wise Issues</div><div class="table-wrap" id="iss-pm"></div></div>
+          <div class="card"><div class="card-title"><i class="ti ti-chart-bar"></i> Last 7 days <span style="font-size:11px;font-weight:400;">· raised vs closed · click a bar for the list</span></div><div id="iss-week-chart"></div></div>
+        </div>
       </div>
 
-      
       <div class="card"><div class="card-title"><i class="ti ti-table"></i> Issue Detail <span style="font-size:11px;font-weight:400;">· one row per project · click + to see its issues</span>
   <span style="margin-left:auto;display:flex;gap:8px;"><button class="pe-clr-btn" onclick="issExpandAll()"><i class="ti ti-square-plus" style="font-size:12px;"></i> Expand all</button><button class="pe-clr-btn" onclick="issCollapseAll()"><i class="ti ti-square-minus" style="font-size:12px;"></i> Collapse all</button></span></div>
         <div class="table-wrap" style="max-height:70vh;overflow:auto;"><table><thead id="iss-head"></thead><tbody id="iss-body"></tbody></table></div></div>
-      
+
     </div>
   </div>
 
@@ -1864,9 +1873,15 @@ let completedPctSum=0;
   if(!tbtForProj.length){tbtBody.innerHTML='<tr><td colspan="11" class="empty">No TBT entries found for this project</td></tr>';}
   const infoBar=document.getElementById('proj-info-bar');
   infoBar.style.display='flex';
+  const _cap=leadRow?lv(leadRow,LEAD_COL.SIZE):'',_pe=leadRow?lv(leadRow,LEAD_COL.PE):'',_pm=leadRow?lv(leadRow,LEAD_COL.CITYMGR):'',_ch=leadRow?lv(leadRow,LEAD_COL.CLUSTER):'';
+  const _nm=n=>n?`<strong>${n}</strong>`:'<strong style="color:#e74c3c;">Not assigned</strong>';
   infoBar.innerHTML=`
     <span><strong>${projName}</strong></span>
     <span>ID: <strong>${projId}</strong></span>
+    <span>Capacity: <strong>${_cap?_cap+' kW':'—'}</strong></span>
+    <span>PE: ${_nm(_pe)}</span>
+    <span>PM: ${_nm(_pm)}</span>
+    <span>CH: ${_nm(_ch)}</span>
     <span>Attendance entries: <strong>${attRowsForProj.length}</strong></span>
     <span>Unique IDs tracked: <strong>${uniqueIdsForProj.size}</strong></span>
     <span>DPR records: <strong>${dprForProj.length}</strong></span>
@@ -2063,7 +2078,10 @@ function povAgingOf(x){
   return '30+ days';
 }
 function povAgingColor(l){return {'Today updated':'#34c98a','Yesterday updated':'#3bc0d8','3–5 days':'#4f8ef7','5–7 days':'#f5a623','7–10 days':'#f5a623','10–15 days':'#e8743b','15–20 days':'#e8743b','20–30 days':'#e74c3c','30+ days':'#c0392b','Never updated':'#8b92b0'}[l]||'#8b92b0';}
-const POV_MS_CFG={
+const POV_DELAY_OPTS=['Delayed','On time','No PO data'];
+function povDelayStatus(x){const d=povComputeDelay(x);if(!d)return 'No PO data';return d.delayBy>0?'Delayed':'On time';}
+ 
+ const POV_MS_CFG={
   
   city:    {col:'CITY',    all:'All Cities',    ph:'Search cities…'},
   cluster: {col:'CLUSTER', all:'All Clusters',  ph:'Search clusters…'},
@@ -2073,13 +2091,14 @@ const POV_MS_CFG={
   sizecat: {col:null,      all:'All Sizes',      ph:'Search size…',   fixed:SIZE_CATEGORIES},
   pname:   {col:'PNAME',   all:'All Projects',   ph:'Search project name…'},
   pid:     {col:'PID',     all:'All Project IDs',ph:'Search project ID…'},
-  aging:   {col:null,      all:'All Aging',      ph:'Search aging…',  fixed:AGING_LABELS}
+  aging:   {col:null,      all:'All Aging',      ph:'Search aging…',  fixed:AGING_LABELS},
+  delay:   {col:null,      all:'All Delay',      ph:'Search delay…',  fixed:POV_DELAY_OPTS}
 };
 
 
-let _povMS={city:new Set(),cluster:new Set(),citymgr:new Set(),pe:new Set(),sizecat:new Set(),status:new Set(),pname:new Set(),pid:new Set(),aging:new Set()};
-let _povMSAll={city:[],cluster:[],citymgr:[],pe:[],sizecat:SIZE_CATEGORIES.slice(),status:POV_STATUSES.slice(),pname:[],pid:[],aging:AGING_LABELS.slice()};
-let _povMSCounts={city:{},cluster:{},citymgr:{},pe:{},sizecat:{},status:{},pname:{},pid:{},aging:{}};
+let _povMS={city:new Set(),cluster:new Set(),citymgr:new Set(),pe:new Set(),sizecat:new Set(),status:new Set(),pname:new Set(),pid:new Set(),aging:new Set(),delay:new Set()};
+let _povMSAll={city:[],cluster:[],citymgr:[],pe:[],sizecat:SIZE_CATEGORIES.slice(),status:POV_STATUSES.slice(),pname:[],pid:[],aging:AGING_LABELS.slice(),delay:POV_DELAY_OPTS.slice()};
+let _povMSCounts={city:{},cluster:{},citymgr:{},pe:{},sizecat:{},status:{},pname:{},pid:{},aging:{},delay:{}};
 
   
 
@@ -2117,6 +2136,8 @@ const sets={city:new Set(),cluster:new Set(),citymgr:new Set(),pe:new Set(),pnam
   _povMS.status=new Set([..._povMS.status].filter(v=>POV_STATUSES.includes(v)));
   _povMSAll.aging=AGING_LABELS.slice();
   _povMS.aging=new Set([..._povMS.aging].filter(v=>AGING_LABELS.includes(v)));
+   _povMSAll.delay=POV_DELAY_OPTS.slice();
+  _povMS.delay=new Set([..._povMS.delay].filter(v=>POV_DELAY_OPTS.includes(v)));
   Object.keys(POV_MS_CFG).forEach(buildPOVMSWidget);
   recomputePOVOptions();
 }
@@ -2187,6 +2208,7 @@ if(exceptKey!=='sizecat' && _povMS.sizecat.size && !_povMS.sizecat.has(sizeCateg
   if(exceptKey!=='pname'   && _povMS.pname.size && !_povMS.pname.has(lv(x,LEAD_COL.PNAME)))return false;
   if(exceptKey!=='pid'     && _povMS.pid.size   && !_povMS.pid.has(lv(x,LEAD_COL.PID)))return false;
   if(exceptKey!=='aging'   && _povMS.aging.size && !_povMS.aging.has(povAgingOf(x)))return false;
+   if(exceptKey!=='delay'   && _povMS.delay.size && !_povMS.delay.has(povDelayStatus(x)))return false;
   return true;
 }
 
@@ -2203,6 +2225,9 @@ function recomputePOVOptions(){
     } else if(key==='aging'){
       r.forEach(x=>{ if(povRowPassesExcept(x,key)){ const a=povAgingOf(x); if(a)counts[a]=(counts[a]||0)+1; } });
       _povMSAll[key]=AGING_LABELS.slice();
+    } else if(key==='delay'){
+      r.forEach(x=>{ if(povRowPassesExcept(x,key)){ const a=povDelayStatus(x); counts[a]=(counts[a]||0)+1; } });
+      _povMSAll[key]=POV_DELAY_OPTS.slice();
     } else {
       const colIdx=LEAD_COL[POV_MS_CFG[key].col];
       r.forEach(x=>{ if(povRowPassesExcept(x,key)){ const val=lv(x,colIdx); if(val)counts[val]=(counts[val]||0)+1; } });
@@ -2427,6 +2452,7 @@ if(fSizeCat.size&&!fSizeCat.has(sizeCategoryOf(x)))return false;
 if(_povMS.pname.size&&!_povMS.pname.has(lv(x,LEAD_COL.PNAME)))return false;
     if(_povMS.pid.size&&!_povMS.pid.has(lv(x,LEAD_COL.PID)))return false;
     if(_povMS.aging.size&&!_povMS.aging.has(povAgingOf(x)))return false;
+   if(_povMS.delay.size&&!_povMS.delay.has(povDelayStatus(x)))return false;
     return true;
   });
   const today=new Date();today.setHours(0,0,0,0);
@@ -2477,7 +2503,7 @@ if(_povMS.pname.size&&!_povMS.pname.has(lv(x,LEAD_COL.PNAME)))return false;
   document.getElementById('pov-city-table').innerHTML=povCityTable(cityCount,citySize);
   const pieEl=document.getElementById('pov-sizecat-chart'); if(pieEl)pieEl.innerHTML=povRenderSizePie(sizeCatCount);
 document.getElementById('pov-delay-report').innerHTML=povDelayReport(updCounts,totalProjects);
-    document.getElementById('pov-head').innerHTML='<tr><th>#</th><th>City</th><th>Project ID</th><th>Project Name</th><th>Size Category</th><th>Capacity</th><th>City Manager</th><th>CPM</th><th>PE</th><th>Project timeline start from</th><th>Installation start date</th><th>Installation completed date</th><th>Installation TAT</th><th>Project TAT</th><th>Completion %</th><th>Installation Status</th><th>Project Status</th><th>Remarks</th><th>Aging</th><th>Phase Summary</th><th>Project Overview</th><th>Detailed Report</th></tr>';
+    document.getElementById('pov-head').innerHTML='<tr><th>#</th><th>City</th><th>Project ID</th><th>Project Name</th><th>Size Category</th><th>Capacity</th><th>City Manager</th><th>CPM</th><th>PE</th><th>Project timeline start from</th><th>Installation start date</th><th>Installation completed date</th><th>Installation TAT</th><th>Project TAT</th><th>Delay Status</th><th>Completion %</th><th>Installation Status</th><th>Project Status</th><th>Remarks</th><th>Aging</th><th>Phase Summary</th><th>Project Overview</th><th>Detailed Report</th></tr>';
   const tbody=document.getElementById('pov-body');
   if(!rows.length){tbody.innerHTML='<tr><td colspan="20" class="empty">No projects match the selected filters</td></tr>';return;}
   const sortedRows=[...rows].sort((a,b)=>{const c=lv(a,LEAD_COL.CITY).localeCompare(lv(b,LEAD_COL.CITY));if(c!==0)return c;return lv(a,LEAD_COL.PNAME).localeCompare(lv(b,LEAD_COL.PNAME));});
@@ -2543,6 +2569,7 @@ let projBadge;
       })()}</td>
       
       <td>${pctCell}</td>
+            <td>${(()=>{const s=povDelayStatus(x),d=povComputeDelay(x);if(s==='Delayed')return `<span class="badge br">⚠ Delayed ${d.delayBy}d</span>${d.isDone?'<div style="font-size:10px;color:var(--muted);margin-top:2px;">completed late</div>':''}`;if(s==='On time')return '<span class="badge bg">✓ On time</span>';return '<span class="badge bgr">No PO data</span>';})()}</td>
       <td>${installBadge}</td>
       <td>${projBadge}</td>
 <td style="font-size:11px;color:var(--muted)">—</td>
@@ -2883,6 +2910,34 @@ function clearRPTFilters(){
   recomputeRPTOptions(); buildRPT();
 }
 
+
+ function rptShowOngoing(){
+  const o=window._rptOv;if(!o)return;
+  const pct=n=>o.tOv?Math.round(n/o.tOv*100):0;
+  const row=(label,sub,n,col,indent)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:8px;margin-bottom:6px;${indent?'margin-left:22px;':''}"><div style="flex:1;"><div style="font-size:13px;font-weight:600;">${label}</div>${sub?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">${sub}</div>`:''}</div><div style="width:110px;"><div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:${pct(n)}%;height:100%;background:${col};"></div></div></div><div style="min-width:70px;text-align:right;font-size:15px;font-weight:700;color:${col};">${n}<span style="font-size:10px;color:var(--muted);font-weight:400;"> ${pct(n)}%</span></div></div>`;
+  const line=(t,n)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><span style="color:var(--muted);">${t}</span><b>${n}</b></div>`;
+  pmvModal(`<div class="pmr-modal" style="max-width:640px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+      <div><div style="font-size:15px;font-weight:600;">On Going — split</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Project Overview rule: PE assigned · installation not done · project not complete · not on hold / cancelled</div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div style="overflow:auto;">
+      <div style="display:flex;align-items:baseline;gap:10px;margin:4px 0 12px;"><span style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">Total</span><span style="font-size:34px;font-weight:700;color:#f5a623;">${o.tOv}</span></div>
+      ${row('Actual On going','Work started — DPR entries exist',o.ovA,'#34c98a')}
+      ${row('Not started yet','PE assigned, no DPR entry yet',o.ovNS,'#e74c3c')}
+      ${row('Vendor not finalized','',o.ovNSv,'#8b92b0',1)}
+      ${row('Vendor finalized, DPR not started','',o.ovNS-o.ovNSv,'#f5a623',1)}
+      <div style="margin-top:14px;padding:12px;background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.25);border-radius:8px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px;">Why the Reports card shows ${o.rep} (work started)</div>
+        ${line('Actual On going',o.ovA)}${line('+ Handover pending (installation done, DPR exists)',o.rH)}${line('+ On hold / Cancelled with DPR',o.rHC)}${o.rOth?line('+ Other',o.rOth):''}
+        <div style="border-top:1px solid var(--border2);margin-top:4px;padding-top:4px;">${line('= Reports On Going',o.rep)}</div>
+      </div>
+    </div>
+  </div>`);
+}
+
+ 
+
 const RPT_DIMS=[
   {key:'city',    label:'City',         col:'CITY',    icon:'ti-building'},
   {key:'cluster', label:'Cluster Head', col:'CLUSTER', icon:'ti-users-group'},
@@ -2904,6 +2959,7 @@ function buildRPT(){
   const r=D.lead.r;
   const groups={};
   let tProjects=0,tSize=0,tCompleted=0,tInProcess=0,tPending=0,tNotAssigned=0,tInstallCompleted=0,tCompletedSize=0;
+   let tOv=0,ovA=0,ovNS=0,ovNSv=0,rH=0,rHC=0,rOth=0;   // Overview-style On Going and its split
   r.forEach(x=>{
     if(!rptRowPasses(x))return;
     let g=lv(x,LEAD_COL[dim.col]);
@@ -2919,13 +2975,25 @@ if(!groups[g])groups[g]={count:0,size:0,completed:0,inProcess:0,pending:0,notAss
     tProjects++; tSize+=size; if(!peAssigned)tNotAssigned++;
     if(m.status==='done'){tCompleted++;tCompletedSize+=size;} else if(m.status==='wip')tInProcess++; else tPending++;
     if(m.installStatus==='done')tInstallCompleted++;
+       {
+      const _h=povHoldInfo(x),_hc=_h.onHold||_h.cancelled;
+      if(peAssigned&&!_hc&&m.installStatus!=='done'&&m.status!=='done'){
+        tOv++;
+        if(m.status==='wip')ovA++;                          // work started (DPR entries exist)
+        else{ovNS++;if(!vendorFinalizeDate(x))ovNSv++;}     // not started yet (no DPR entry)
+      }
+      if(m.status==='wip'&&!(peAssigned&&!_hc&&m.installStatus!=='done')){   // counted in Reports 'On Going' but not in Overview 'On Going'
+        if(_hc)rHC++;else if(m.installStatus==='done')rH++;else rOth++;
+      }
+    }
   });
+    window._rptOv={tOv,ovA,ovNS,ovNSv,rH,rHC,rOth,rep:tInProcess};
   const metricsEl=document.getElementById('rpt-metrics');
   if(metricsEl)metricsEl.innerHTML=
     metric('ti-building-skyscraper','Total Projects',tProjects,'All projects','#4f8ef7')+
     metric('ti-ruler-2','Total Size',Math.round(tSize).toLocaleString(),'Sum of capacity','#9b6dff')+
     metricWithBar('ti-circle-check','Completed',tCompleted,`${tProjects?Math.round(tCompleted/tProjects*100):0}% of projects`,'#34c98a',tProjects?tCompleted/tProjects*100:0,'#34c98a')+
-    metricWithBar('ti-loader','On Going',tInProcess,`${tProjects?Math.round(tInProcess/tProjects*100):0}% of projects`,'#f5a623',tProjects?tInProcess/tProjects*100:0,'#f5a623')+
+        metricWithBar('ti-loader','On Going',tInProcess,`${tProjects?Math.round(tInProcess/tProjects*100):0}% of projects · <span title="On Going as counted on the Project Overview tab">Overview: ${tOv} (${tOv-tInProcess>=0?'+':''}${tOv-tInProcess})</span>`,'#f5a623',tProjects?tInProcess/tProjects*100:0,'#f5a623').replace('class="metric" style="--mc:#f5a623"','class="metric" style="--mc:#f5a623;cursor:pointer;" onclick="rptShowOngoing()" title="Click for split"')+
     metricWithBar('ti-clock','Pending',tPending,`${tProjects?Math.round(tPending/tProjects*100):0}% of projects`,'#e74c3c',tProjects?tPending/tProjects*100:0,'#e74c3c')+
     metricWithBar('ti-user-off','Not Assigned',tNotAssigned,`${tProjects?Math.round(tNotAssigned/tProjects*100):0}% of projects`,'#e74c3c',tProjects?tNotAssigned/tProjects*100:0,'#e74c3c');
   document.getElementById('rpt-head').innerHTML=`<tr><th>#</th><th>${dim.label}</th><th style="text-align:right;">Projects</th><th style="text-align:right;">Size</th><th style="text-align:right;">Installation Completed</th><th style="text-align:right;">Completed</th><th style="text-align:right;">Completed Size</th><th style="text-align:right;">On Going</th><th style="text-align:right;">Pending</th><th style="text-align:right;">Not Assigned</th><th style="min-width:130px;">Completion %</th></tr>`;
@@ -5603,6 +5671,7 @@ function hrcShowList(rid,key){
       if(fSizeCat.size&&!fSizeCat.has(sizeCategoryOf(x)))return false;
       if(fStatus.size&&!povProjectStatuses(x).some(t=>fStatus.has(t)))return false;
       if(_povMS.aging.size&&!_povMS.aging.has(povAgingOf(x)))return false;
+     if(_povMS.delay.size&&!_povMS.delay.has(povDelayStatus(x)))return false;
       return true;
     });
     if(_povDelayBucket)rows=rows.filter(x=>povUpdBucketOf(x)===_povDelayBucket);
@@ -5877,6 +5946,7 @@ function povGetBaseRows(){
     if(_povMS.pname.size&&!_povMS.pname.has(lv(x,LEAD_COL.PNAME)))return false;
    if(_povMS.pid.size&&!_povMS.pid.has(lv(x,LEAD_COL.PID)))return false;
     if(_povMS.aging.size&&!_povMS.aging.has(povAgingOf(x)))return false;
+   if(_povMS.delay.size&&!_povMS.delay.has(povDelayStatus(x)))return false;
     return true;
   });
 }
@@ -7603,14 +7673,22 @@ function issueKeySet(){
 }
 
 
-  function issBuildRows(){
+/* ==== Issue Tracker fix: paste this block at the very bottom of the <script>, directly ABOVE the line  loadAll();
+   It replaces whatever issBuildRows() is defined above (so a duplicate / old copy can no longer win). ==== */
+issBuildRows=function(){
   const h=D.issue.h;if(!h.length)return [];
-  const iL=issCol(h,['leadid']),iD=issCol(h,['date']),iP=issCol(h,['projectid']),iN=issCol(h,['projectname']);
+  const iL=issCol(h,['leadid']),iP=issCol(h,['projectid']);
+  let iD=issCol(h,['date']);if(iD<0)iD=0;                          // raised date = column A
+  let iSS=issCol(h,['sseid']);if(iSS<0)iSS=3;                       // SSE ID = Project ID = column D
+  const iSite=issCol(h,['sitename']),iN=Math.max(issCol(h,['projectname']),iSite);
+  const hPE=issCol(h,['pe']),hPM=issCol(h,['pm']),hCH=issCol(h,['ch']);   // the sheet's own PE / PM / CH columns
   const iC=issCol(h,['centralclosurestatus']),iH=issCol(h,['chescalationstatus']),iM=issCol(h,['pmescalationstatus']),iE=issCol(h,['escalationstatuspe']);
   const iDesc=(()=>{let i=issCol(h,['issueblocker']);if(i>=0)return i;return h.findIndex(z=>{const n=issNorm(z);return (n.includes('blocker')||n.includes('remark')||n.includes('comment'))&&!n.includes('status');});})();
   let iSev=h.findIndex(z=>issNorm(z).includes('severity'));if(iSev<0)iSev=13;
   const normSev=s=>{const l=String(s||'').trim().toLowerCase();return l==='high'?'High':l==='medium'?'Medium':l==='low'?'Low':'';};
   const iEnd=h.findIndex(z=>{const n=issNorm(z);return (n.includes('closure')||n.includes('closed')||n.includes('completion')||n.includes('resolved'))&&(n.includes('date')||n.includes('time'))&&!n.includes('status');});
+  // each level's action date sits in the column right NEXT to its status column (O->P, Q->R, S->T, U->V)
+  const LV=[['PE',iE],['PM',iM],['CH',iH],['Central',iC]].map(z=>[z[0],z[1],z[1]>=0?z[1]+1:-1]);
   const miss=[['Lead ID',iL],['Date',iD],['Central closure status',iC],['CH Escalation Status',iH],['PM Escalation Status',iM],['Escalation Status (PE)',iE]].filter(z=>z[1]<0).map(z=>z[0]);
   const note=document.getElementById('iss-note');
   if(note)note.innerHTML=(!h.length||miss.length)?`<div style="padding:10px 12px;margin-bottom:12px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);border-radius:8px;font-size:12px;">Columns not found in the issue sheet: <b>${miss.join(', ')}</b>. Check the header names.</div>`:'';
@@ -7618,34 +7696,50 @@ function issueKeySet(){
   const leadToPid={};
   if(pL>=0&&pP>=0)D.pmr.r.forEach(x=>{const l=v(x,pL),p=v(x,pP);if(l&&p)leadToPid[l]=p;});
   const leadRow={};D.lead.r.forEach(x=>{const p=lv(x,LEAD_COL.PID);if(p)leadRow[p]=x;});
+  // one spelling per person ('krunal gemlawala' / 'krunal Gemlawala')
+  const _nm={};(_leadAll||D.lead.r).forEach(x=>{[LEAD_COL.PE,LEAD_COL.CITYMGR,LEAD_COL.CLUSTER].forEach(c=>{const n=lv(x,c);if(n&&!_nm[n.toLowerCase()])_nm[n.toLowerCase()]=n;});});
+  const canon=n=>{n=String(n||'').trim();return n?(_nm[n.toLowerCase()]||n):'';};
   const isAdmin=_user&&_user.role==='admin';
+  const me=String(_user&&_user.name||'').trim().toLowerCase();
   const today=new Date();today.setHours(0,0,0,0);
   const rows=[];
   D.issue.r.forEach(x=>{
     const lead=iL>=0?v(x,iL):'';
-    if(!lead&&iP<0)return;
-    let pid=iP>=0?v(x,iP):'';if(!pid)pid=leadToPid[lead]||'';
+    const sse=iSS>=0?v(x,iSS):'';
+    if(!lead&&!sse&&!(iDesc>=0&&v(x,iDesc)))return;                         // completely empty line
+    let pid=iP>=0?v(x,iP):'';
+    if(!pid&&sse&&leadRow[sse])pid=sse;                                       // SSE ID = Project ID in the Lead Tracker
+    if(!pid)pid=leadToPid[lead]||'';
+    if(!pid&&sse)pid=sse;                                                     // still its own row if the Lead Tracker doesn't have it
     const lr=leadRow[pid];
-    if(!lr&&!isAdmin)return;
+    const sPE=canon(hPE>=0?v(x,hPE):''),sPM=canon(hPM>=0?v(x,hPM):''),sCH=canon(hCH>=0?v(x,hCH):'');
+    if(!isAdmin){const mine=_user&&_user.role==='cluster'?sCH:_user&&_user.role==='citymgr'?sPM:_user&&_user.role==='pe'?sPE:'';if(!lr&&(!me||mine.toLowerCase()!==me))return;}
     const status=issStatusOf(iC>=0?v(x,iC):'',iH>=0?v(x,iH):'',iM>=0?v(x,iM):'',iE>=0?v(x,iE):'');
-    const d=iD>=0?povParseHoldDate(v(x,iD)):null;
+    const d=povParseHoldDate(v(x,iD));
     const s0=d?new Date(d.getFullYear(),d.getMonth(),d.getDate()):null;
-    const endD=iEnd>=0?povParseHoldDate(v(x,iEnd)):null;
+    const sv=LV.map(z=>z[1]>=0?v(x,z[1]).toLowerCase():'');
+    let raisedBy='',doneBy='',endD=null;
+    if(sv[0])raisedBy='PE';else if(sv[1])raisedBy='PM';else if(sv[2])raisedBy='CH';        // who raised it
+    if(status==='Completed'){                                                               // who completed it + the date next to that status
+      for(const i of [2,1,0,3]){if(sv[i]==='completed'){doneBy=LV[i][0];endD=LV[i][2]>=0?povParseHoldDate(v(x,LV[i][2])):null;break;}}
+      if(!endD&&iEnd>=0)endD=povParseHoldDate(v(x,iEnd));
+    }
     let days=null,bucket='',tat=null;
     if(status!=='Completed'&&s0){
       days=Math.max(0,Math.floor((today-s0)/86400000));
       const b=ISS_BUCKETS.find(z=>days>=z[1]&&days<=z[2]);bucket=b?b[0]:'';
-      tat=days;                                   // not solved → today − requested date
+      tat=days;                                                                            // not solved -> today - raised date
     }else if(s0&&endD){
-      tat=Math.max(0,Math.round((new Date(endD.getFullYear(),endD.getMonth(),endD.getDate())-s0)/86400000));
+      tat=Math.max(0,Math.round((new Date(endD.getFullYear(),endD.getMonth(),endD.getDate())-s0)/86400000));   // completion date - raised date
     }
-    rows.push({lead,pid:pid||'—',name:(iN>=0&&v(x,iN))||(lr?lv(lr,LEAD_COL.PNAME):'')||pid||'—',
-      city:lr?lv(lr,LEAD_COL.CITY)||'—':'—',pm:lr?lv(lr,LEAD_COL.CITYMGR)||'(No PM)':'—',pe:lr?lv(lr,LEAD_COL.PE):'',
+    rows.push({lead,pid:pid||(lead?'LEAD:'+lead:'—'),name:(iN>=0&&v(x,iN))||(lr?lv(lr,LEAD_COL.PNAME):'')||pid||'—',
+      city:lr?lv(lr,LEAD_COL.CITY)||'—':'—',pm:sPM||(lr?lv(lr,LEAD_COL.CITYMGR)||'(No PM)':'—'),pe:sPE||(lr?lv(lr,LEAD_COL.PE):''),
       size:lr?sizeCategoryOf(lr):'—',status,date:d,days,bucket,tat,endD,
-      desc:iDesc>=0?v(x,iDesc):'',sev:normSev(iSev>=0?v(x,iSev):''),raw:x});
+      desc:iDesc>=0?v(x,iDesc):'',sev:normSev(iSev>=0?v(x,iSev):''),raisedBy,doneBy,isNew:!lr,raw:x});
   });
   return rows;
-}
+};
+console.log('issBuildRows v2 active (SSE ID mapping + issue-sheet owners)');
 
   
 
@@ -7739,7 +7833,14 @@ function buildISS(){
     return `<tr${l.length?` onclick="issShowProjects('Aging ${b[0]}',${issReg(l)})" style="cursor:pointer;"`:''}><td>${b[0]}</td><td style="text-align:right;font-weight:600;color:${col};">${l.length}</td><td style="text-align:right;color:var(--muted);">${p}%</td><td style="min-width:90px;"><div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:${p}%;height:100%;background:${col};"></div></div></td></tr>`;
   }).join('');
   document.getElementById('iss-aging').innerHTML=`<table style="font-size:12px;width:100%;"><thead><tr><th>Aging</th><th style="text-align:right;">Open</th><th style="text-align:right;">%</th><th></th></tr></thead><tbody>${aBody}</tbody><tfoot><tr style="border-top:2px solid var(--border2);"><td style="font-weight:700;">Total open</td><td style="text-align:right;font-weight:700;">${open.length}</td><td></td><td></td></tr></tfoot></table>`;
-
+  // Category-wise (sheet column L) – click a row for the Impacted Activity (column K) split
+  const _catM={};rows.forEach(r=>{const c=issCatOf(r);(_catM[c]=_catM[c]||[]).push(r);});
+  const _catHtml=Object.entries(_catM).sort((a,b)=>b[1].length-a[1].length).map(([c,l])=>{
+    const op=l.filter(r=>r.status!=='Completed').length,dn=l.length-op,cp=Math.round(dn/l.length*100);
+    const col=cp>=60?'#34c98a':cp>=30?'#f5a623':'#e74c3c';
+    return `<tr onclick="issCatDetail('${c.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" style="cursor:pointer;"><td style="font-weight:500;">${pemrEsc(c)}</td><td style="text-align:right;font-weight:600;">${l.length}</td><td style="text-align:right;color:#f5a623;font-weight:600;">${op||'—'}</td><td style="text-align:right;color:#34c98a;font-weight:600;">${dn||'—'}</td><td style="min-width:90px;"><div style="display:flex;align-items:center;gap:6px;"><div style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:${cp}%;height:100%;background:${col};"></div></div><span style="font-size:11px;color:var(--muted);min-width:28px;text-align:right;">${cp}%</span></div></td></tr>`;
+  }).join('');
+  document.getElementById('iss-cat').innerHTML=`<table style="font-size:12px;width:100%;"><thead><tr><th>Category</th><th style="text-align:right;">Issues</th><th style="text-align:right;">Open</th><th style="text-align:right;">Done</th><th>Closure</th></tr></thead><tbody>${_catHtml||'<tr><td colspan="5" class="empty">No issues</td></tr>'}</tbody><tfoot><tr style="border-top:2px solid var(--border2);"><td style="font-weight:700;">Total</td><td style="text-align:right;font-weight:700;">${total}</td><td style="text-align:right;font-weight:700;color:#f5a623;">${total-done.length}</td><td style="text-align:right;font-weight:700;color:#34c98a;">${done.length}</td><td></td></tr></tfoot></table>`;
   // PM-wise
   const pmM={};rows.forEach(r=>{(pmM[r.pm]=pmM[r.pm]||[]).push(r);});
   const numCell=(l,label,col)=>l.length?`<td style="text-align:right;color:${col};font-weight:600;cursor:pointer;text-decoration:underline dotted;" onclick="issShowProjects('${label}',${issReg(l)})">${l.length}</td>`:'<td style="text-align:right;color:var(--muted);">—</td>';
@@ -7748,6 +7849,9 @@ function buildISS(){
     return `<tr><td style="color:var(--muted);">${i+1}</td><td style="font-weight:500;">${pemrEsc(pm)}</td>${numCell(l,nm+' — Total','var(--text)')}${numCell(ip,nm+' — In Process','#9b6dff')}${numCell(dn,nm+' — Completed','#34c98a')}${numCell(pn,nm+' — Pending','#f5a623')}<td style="text-align:right;color:var(--muted);">${l.length?Math.round(dn.length/l.length*100):0}%</td></tr>`;
   }).join('');
   document.getElementById('iss-pm').innerHTML=`<table style="font-size:12px;width:100%;"><thead><tr><th>#</th><th>PM</th><th style="text-align:right;">Total</th><th style="text-align:right;">In Process</th><th style="text-align:right;">Completed</th><th style="text-align:right;">Pending</th><th style="text-align:right;">Closure %</th></tr></thead><tbody>${pmRows||'<tr><td colspan="7" class="empty">No issues</td></tr>'}</tbody></table>`;
+
+  issCharts(rows);
+
 
   // detail table
     renderISSDetail();
@@ -7758,6 +7862,52 @@ function buildISS(){
 function issToggleProj(i){const p=(window._issProjList||[])[i];if(!p)return;if(_issExp.has(p.pid))_issExp.delete(p.pid);else _issExp.add(p.pid);renderISSDetail();}
 function issExpandAll(){(window._issProjList||[]).forEach(p=>_issExp.add(p.pid));renderISSDetail();}
 function issCollapseAll(){_issExp.clear();renderISSDetail();}
+
+
+ // Charts for the Issue Tracker tab: city-wise raised vs closed (under Category-wise) and last 7 days raised vs closed (under PM-wise)
+function issCharts(rows){
+  const RC='var(--iss-raised,#4f8ef7)',CC='#34c98a';
+  const dayOf=d=>d?new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime():null;
+  const esc1=s=>String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  const legend=(a,b)=>`<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:10px;"><span><span style="color:${RC};">●</span> Raised <b style="color:var(--text);">${a}</b></span><span><span style="color:${CC};">●</span> Closed <b style="color:var(--text);">${b}</b></span></div>`;
+
+  // ---- 1) city-wise: escalated (raised) vs closed ----
+  const byC={};rows.forEach(r=>{const c=(r.city&&r.city!=='—')?r.city:'Unknown';(byC[c]=byC[c]||[]).push(r);});
+  const cs=Object.entries(byC).sort((a,b)=>b[1].length-a[1].length);
+  const cmax=Math.max(1,...cs.map(([,l])=>l.length));
+  const totR=rows.length,totC=rows.filter(r=>r.status==='Completed').length;
+  const bar=(n,col)=>`<div style="height:8px;border-radius:4px;background:${n?col:'var(--border2)'};width:${n?Math.max(3,Math.round(n/cmax*100)):1}%;"></div>`;
+  const cityHtml=legend(totR,totC)+(cs.length?cs.map(([c,l])=>{
+    const dn=l.filter(r=>r.status==='Completed');
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">
+      <div style="width:88px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc1(c)}">${pemrEsc(c)}</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+        <div style="cursor:pointer;" onclick="issShowProjects('${esc1(c)} · Raised',${issReg(l)})">${bar(l.length,RC)}</div>
+        <div style="${dn.length?'cursor:pointer;':''}" ${dn.length?`onclick="issShowProjects('${esc1(c)} · Closed',${issReg(dn)})"`:''}>${bar(dn.length,CC)}</div>
+      </div>
+      <div style="min-width:74px;text-align:right;font-size:11px;"><b style="color:${RC};">${l.length}</b> <span style="color:var(--muted);">/</span> <b style="color:${CC};">${dn.length}</b></div>
+    </div>`;}).join(''):'<div class="empty" style="padding:14px;">No issues</div>');
+  const ce=document.getElementById('iss-city-chart');if(ce)ce.innerHTML=cityHtml;
+
+  // ---- 2) last 7 days (ending today): raised that day vs closed that day ----
+  const today=new Date();today.setHours(0,0,0,0);
+  const days=[];for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);days.push(d);}
+  const H=96,data=days.map(d=>{const k=d.getTime();
+    return {d,k,raised:rows.filter(r=>dayOf(r.date)===k),closed:rows.filter(r=>r.status==='Completed'&&dayOf(r.endD)===k)};});
+  const wmax=Math.max(1,...data.map(x=>Math.max(x.raised.length,x.closed.length)));
+  const sR=data.reduce((s,x)=>s+x.raised.length,0),sC=data.reduce((s,x)=>s+x.closed.length,0);
+  const col=(l,color,lbl,x)=>{const n=l.length;
+    return `<div ${n?`onclick="issShowProjects('${lbl} · ${esc1(x.d.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short'}))}',${issReg(l)})"`:''} style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;${n?'cursor:pointer;':''}">
+      <span style="font-size:11px;font-weight:700;color:${n?'var(--text)':'var(--muted)'};">${n}</span>
+      <div style="width:17px;height:${n?Math.max(4,Math.round(n/wmax*H)):2}px;background:${n?color:'var(--border2)'};border-radius:4px 4px 0 0;"></div></div>`;};
+  const weekHtml=legend(sR,sC)+`<div style="display:flex;justify-content:space-between;gap:4px;">`+data.map(x=>{
+    const isToday=x.k===today.getTime();
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+      <div style="display:flex;align-items:flex-end;gap:4px;height:${H+20}px;">${col(x.raised,RC,'Raised',x)}${col(x.closed,CC,'Closed',x)}</div>
+      <div style="border-top:1px solid var(--border2);width:100%;text-align:center;padding-top:4px;${isToday?'color:var(--accent);':''}"><div style="font-size:11px;font-weight:600;">${x.d.toLocaleDateString('en-IN',{weekday:'short'})}</div><div style="font-size:10px;color:var(--muted);">${x.d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</div></div>
+    </div>`;}).join('')+`</div>`;
+  const we=document.getElementById('iss-week-chart');if(we)we.innerHTML=weekHtml;
+}
 
 
 function renderISSDetail(){
@@ -7885,6 +8035,36 @@ function issShowProjects(title,id){
     <div class="table-wrap" style="overflow:auto;"><table style="font-size:12px;width:100%;">
       <thead><tr><th>#</th><th>Project ID</th><th>Project Name</th><th>City</th><th>PM</th><th style="text-align:right;">Issues</th><th>Status</th><th>Oldest open</th></tr></thead>
       <tbody>${rows||'<tr><td colspan="8" class="empty">No issues</td></tr>'}</tbody></table></div></div>`);
+}
+
+
+
+ // Issue Category = sheet column L, Impacted Activity = column K (found by header name, falls back to the column letter)
+function issCatOf(r){const i0=issCol(D.issue.h,['issuecategory']),i=i0>=0?i0:11;return String(r.raw[i]==null?'':r.raw[i]).trim()||'Uncategorised';}
+function issActOf(r){const i0=issCol(D.issue.h,['impactedactivity']),i=i0>=0?i0:10;return String(r.raw[i]==null?'':r.raw[i]).trim()||'Not specified';}
+
+// Category row click → Impacted Activity wise split
+function issCatDetail(cat){
+  const l=_issRows.filter(r=>issCatOf(r)===cat),m={};
+  l.forEach(r=>{const a=issActOf(r);(m[a]=m[a]||[]).push(r);});
+  const op=l.filter(r=>r.status!=='Completed').length,dn=l.length-op;
+  const rows=Object.entries(m).sort((a,b)=>b[1].length-a[1].length).map(([a,x],i)=>{
+    const ip=x.filter(r=>ISS_INPROC.includes(r.status)).length,pn=x.filter(r=>r.status==='Pending').length,d2=x.filter(r=>r.status==='Completed').length;
+    const o=x.filter(r=>r.status!=='Completed'),old=o.length?Math.max(...o.map(r=>r.days||0)):null;
+    const cp=Math.round(d2/x.length*100),col=cp>=60?'#34c98a':cp>=30?'#f5a623':'#e74c3c';
+    const oc=old==null?'var(--muted)':old>60?'#e74c3c':old>30?'#e8743b':old>7?'#f5a623':'#34c98a';
+    const t=(cat+' · '+a).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return `<tr style="cursor:pointer;" onclick="issShowProjects('${t}',${issReg(x)})"><td style="color:var(--muted);">${i+1}</td><td style="font-weight:500;">${pemrEsc(a)}</td><td style="text-align:right;font-weight:700;">${x.length}</td><td style="text-align:right;color:#9b6dff;">${ip||'—'}</td><td style="text-align:right;color:#f5a623;">${pn||'—'}</td><td style="text-align:right;color:#34c98a;font-weight:600;">${d2||'—'}</td><td style="text-align:right;color:${oc};font-weight:600;">${old==null?'—':old+'d'}</td><td style="min-width:100px;"><div style="display:flex;align-items:center;gap:6px;"><div style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:${cp}%;height:100%;background:${col};"></div></div><span style="font-size:11px;color:var(--muted);min-width:28px;text-align:right;">${cp}%</span></div></td></tr>`;
+  }).join('');
+  pmvModal(`<div class="pmr-modal" style="max-width:820px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;">
+      <div><div style="font-size:15px;font-weight:600;">${pemrEsc(cat)} — Impacted Activity wise</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${l.length} issue(s) · ${op} open · ${dn} completed · click a row for the project list</div></div>
+      <button onclick="pemrCloseDay()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button></div>
+    <div class="table-wrap" style="overflow:auto;"><table style="font-size:12px;width:100%;">
+      <thead><tr><th>#</th><th>Impacted Activity</th><th style="text-align:right;">Issues</th><th style="text-align:right;">In process</th><th style="text-align:right;">Pending</th><th style="text-align:right;">Completed</th><th style="text-align:right;">Oldest open</th><th>Closure</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="8" class="empty">No issues</td></tr>'}</tbody>
+      <tfoot><tr style="border-top:2px solid var(--border2);"><td></td><td style="font-weight:700;">Total</td><td style="text-align:right;font-weight:700;">${l.length}</td><td></td><td></td><td style="text-align:right;font-weight:700;color:#34c98a;">${dn}</td><td></td><td></td></tr></tfoot>
+    </table></div></div>`);
 }
 
 // status row click → city-wise and size-wise counts
